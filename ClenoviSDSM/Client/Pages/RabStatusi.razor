@@ -1,0 +1,170 @@
+﻿@page "/rabstatusi"
+
+@using ClenoviSDSM.Shared.Models
+@using ClenoviSDSM.Client.Services
+
+@inject HttpClient Http
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+@if (rabStatusi == null)
+{
+    <MudOverlay Visible="true" DarkBackground="true">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    </MudOverlay>
+}
+else
+{
+    <AuthorizeView Roles="Admin">
+        <Authorized Context="aut">
+            <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-16">
+                <MudTable Items="@rabStatusi" @bind-SelectedItem="selectedRS" Dense="true" Hover="true" Striped="true" Elevation="2" CanCancelEdit="true" RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" CancelEditTooltip="Откажи" CommitEditTooltip="Промени" OnCommitEditClick="@(() => UpdateRabotenStatus())">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">Работни статуси</MudText>
+                        <MudSpacer />
+                        <MudTooltip Text="Нов раб.статус">
+                            <MudFab OnClick="OpenDialog" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Medium" IconSize="Size.Medium" Class="ma-2" />
+                        </MudTooltip>
+                    </ToolBarContent>
+                    <ColGroup>
+                        <col style="width:50px;" />
+                        <col />
+                        <col style="width:50px;" />
+                    </ColGroup>
+                    <HeaderContent>
+                        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<RabotenStatus, object>(x => x.Id)">Id</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<RabotenStatus, object>(x => x.OpisStatus)">Опис</MudTableSortLabel></MudTh>
+                        <MudTh>Акции</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Id">@context.Id</MudTd>
+                        <MudTd DataLabel="Опис">@context.OpisStatus</MudTd>
+                        <MudTd DataLabel="">
+                            @if (context.Id != null)
+                                {
+                                <MudTooltip Text="Избриши">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Primary" OnClick="@(() => DeleteStatus(@context.Id))" />
+                                </MudTooltip>
+                                }
+                        </MudTd>
+                    </RowTemplate>
+                    <RowEditingTemplate>
+                        <MudTd DataLabel="Id">@context.Id</MudTd>
+                        <MudTd DataLabel="Опис">
+                            <MudTextField @bind-Value="@context.OpisStatus" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="@(context.Id == null)" />
+                        </MudTd>
+                        <MudTd></MudTd>
+                    </RowEditingTemplate>
+                </MudTable>
+            </MudContainer>
+        </Authorized>
+        <NotAuthorized>
+            <MudText Typo="Typo.h5" GutterBottom="true">Не сте авторизирани!</MudText>
+        </NotAuthorized>
+    </AuthorizeView>
+
+
+        <MudDialog @bind-IsVisible="dialogVisible" >
+            <TitleContent>
+                <MudText Typo="Typo.h6">
+                    <MudIcon Icon="@Icons.Material.Filled.Engineering" Class="mr-3" /> Нов работен статус
+                </MudText>
+            </TitleContent>
+            <DialogContent>
+                <EditForm Model="@newRS" OnValidSubmit="NewRabotenStatus">
+                    <DataAnnotationsValidator />
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="@newRS.OpisStatus" For="@(() => newRS.OpisStatus)" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Опис" />
+                        </MudItem>
+                        <MudItem xs="12" Class="d-inline-flex justify-end">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-10">Запиши</MudButton>
+                        </MudItem>
+                    </MudGrid>
+                </EditForm>
+            </DialogContent>
+        </MudDialog>
+
+        }
+
+        @code {
+            private IEnumerable<RabotenStatus> rabStatusi;
+            private RabotenStatus statusBeforeEdit;
+            private RabotenStatus selectedRS;
+
+            private RabotenStatus newRS = new RabotenStatus();
+
+            private bool dialogVisible;
+            private void OpenDialog() => dialogVisible = true;
+
+            protected override async Task OnInitializedAsync()
+            {
+                await GetRabotniStatusi();
+            }
+
+            private async Task GetRabotniStatusi()
+            {
+                rabStatusi = await Http.GetFromJsonAsync<IEnumerable<RabotenStatus>>("api/GetRabotniStatusi");
+            }
+
+            private async Task UpdateRabotenStatus()
+            {
+                if (selectedRS.Id != null)
+                {
+                    await Http.PostAsJsonAsync("api/UpdateRabotenStatus", selectedRS);
+
+                    Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+                    Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+                    Snackbar.Add("Успешно изменет раб.статус", Severity.Success);
+                    await GetRabotniStatusi();
+                }
+            }
+
+            private async Task NewRabotenStatus()
+            {
+                await Http.PostAsJsonAsync("api/InsertRabotenStatus", newRS);
+                dialogVisible = false;
+                Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+                Snackbar.Add("Успешно внесен раб.статус", Severity.Success);
+                await GetRabotniStatusi();
+            }
+
+            private void BackupItem(object element)
+            {
+                statusBeforeEdit = new()
+                {
+                    Id = ((RabotenStatus)element).Id,
+                    OpisStatus = ((RabotenStatus)element).OpisStatus
+                };
+            }
+
+            private void ResetItemToOriginalValues(object element)
+            {
+                ((RabotenStatus)element).OpisStatus = statusBeforeEdit.OpisStatus;
+            }
+
+            private async Task DeleteStatus(int? Id)
+            {
+                var parameters = new DialogParameters();
+                parameters.Add("TitleIcon", Icons.Material.Filled.DeleteForever);
+                parameters.Add("TitleText", "Бришење на статус?");
+                string[] poraka = new string[] { "Внимание!", "Работниот статус ќе биде избришан.", "Враќање назад не е можно." };
+
+                parameters.Add("ContentText", poraka);
+                parameters.Add("CancelButtonText", "Откажи");
+                parameters.Add("OKButtonText", "Избриши");
+
+                DialogOptions opt = new DialogOptions() { DisableBackdropClick = true, MaxWidth = MaxWidth.Large };
+                var dialog = DialogService.Show<MsgBox>("Бриши статус", parameters, opt);
+                var result = await dialog.Result;
+                if (!result.Cancelled)
+                {
+                    await Http.DeleteAsync("api/DeleteRabotenStatus/" + Id);
+                    Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+                    Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+                    Snackbar.Add("Успешно избришан статус", Severity.Success);
+                    await GetRabotniStatusi();
+                }
+            }
+        }

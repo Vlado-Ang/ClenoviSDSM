@@ -1,0 +1,323 @@
+﻿@page "/clenovi"
+@using ClenoviSDSM.Shared.Models
+@using ClenoviSDSM.Client.Services
+@inject HttpClient Http
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject IExportExcelService excelService
+@inject IJSRuntime js
+
+
+
+    @if (clenovi == null || stepeniObrazovanie == null || rabStatusi == null || opstini == null)
+    {
+        <MudOverlay Visible="true" DarkBackground="true">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        </MudOverlay>
+    }
+    else
+    {
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-16">
+    <MudText Typo="Typo.h4" GutterBottom="true">Листа на членови</MudText>
+
+
+    <MudExpansionPanels>
+        <MudExpansionPanel>
+            <TitleContent>
+                <div class="d-flex">
+                    <MudIcon Icon="@Icons.Material.Filled.Search" class="mr-3"></MudIcon>
+                    <MudText><strong>Пребарување...</strong></MudText>
+                </div>
+            </TitleContent>
+            <ChildContent>
+                <MudGrid>
+                    <MudItem xs="12" sm="6" lg="4">
+                        <MudTextField @bind-Value="@clFilter.Ime" Label="Име" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" lg="4">
+                        <MudTextField @bind-Value="@clFilter.Prezime" Label="Презиме" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" lg="4">
+                        <MudTextField @bind-Value="@clFilter.EMBG" Label="ЕМБГ" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" lg="4">
+                        <MudTextField @bind-Value="@clFilter.BrClenskaKarta" Label="Бр. на членска карта" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" lg="4">
+                        <MudDatePicker Editable="true" @bind-Date="@clFilter.DataRagjanjeOd" Label="Датум раѓање пред" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" lg="4">
+                        <MudDatePicker Editable="true" @bind-Date="@clFilter.DataRagjanjeDo" Label="Датум раѓање после" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" Class="d-inline-flex justify-end">
+                        <MudButton Color="Color.Warning" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.ClearAll" OnClick="Clear" Class="ma-1">Исчисти</MudButton>
+                        <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Search" OnClick="Search" Class="ma-1">Пребарај</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </ChildContent>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+
+    <MudDivider DividerType="DividerType.Middle" Class="my-6" />
+
+
+    <MudTable Items="clenovi" Hover="true" Dense="true" Striped="true" SortLabel="Сорт по" Elevation="0">
+        <ToolBarContent>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Custom.FileFormats.FileExcel" OnClick="DownloadExcelFile" Class="ma-1">Excel експорт</MudButton>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Clen, object>(x => x.Ime)">Име</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Clen, object>(x => x.Prezime)">Презиме</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Clen, object>(x => x.EMBG)">ЕМБГ</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Clen, object>(x => x.DataRagjanje)">Дата на раѓање</MudTableSortLabel></MudTh>
+            <MudTh>Акции</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Име">@context.Ime</MudTd>
+            <MudTd DataLabel="Презиме">@context.Prezime</MudTd>
+            <MudTd DataLabel="ЕМБГ">@context.EMBG</MudTd>
+            <MudTd DataLabel="Дата на раѓање">@string.Format("{0:dd.MM.yyyy}", context.DataRagjanje)</MudTd>
+            <MudTd DataLabel="">
+                <AuthorizeView Roles="Admin,Editor">
+                    <Authorized Context="aut">
+                        <MudTooltip Text="Измени">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Info" OnClick="@(() => EditClen(@context.Id, false))" />
+                        </MudTooltip>
+                    </Authorized>
+                </AuthorizeView>
+                <AuthorizeView Roles="Admin">
+                    <Authorized Context="aut">
+                        <MudTooltip Text="Избриши">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Primary" OnClick="@(() => DeleteClen(@context.Id))" />
+                        </MudTooltip>
+                    </Authorized>
+                </AuthorizeView>
+                <MudTooltip Text="Види детали">
+                    <MudIconButton Icon="@Icons.Material.Filled.Article" Size="Size.Small" Color="Color.Primary" OnClick="@(() => EditClen(@context.Id, true))" />
+                </MudTooltip>
+            </MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager InfoFormat="Прикажани редови {first_item}-{last_item} од {all_items}" PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" RowsPerPageString="Редови по страна" />
+        </PagerContent>
+    </MudTable>
+</MudContainer>
+<AuthorizeView Roles="Admin">
+    <Authorized>
+        <MudContainer Class="d-flex justify-end" MaxWidth="MaxWidth.ExtraLarge">
+            <MudTooltip Text="Нов член">
+                <MudFab OnClick="@((e) => NewClen())" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Large" IconSize="Size.Large" Class="ma-2" />
+            </MudTooltip>
+        </MudContainer>
+    </Authorized>
+</AuthorizeView>
+    }
+
+
+
+    @code {
+        private IEnumerable<Clen> clenovi;
+        private IEnumerable<Clen> clenoviTmp;
+        private IEnumerable<ClenExcel> clenoviExcel;
+
+        private IEnumerable<RabotenStatus> rabStatusi;
+        private IEnumerable<StepenObrazovanie> stepeniObrazovanie;
+        private IEnumerable<string> opstini;
+
+        private ClenoviFilter clFilter = new ClenoviFilter();
+
+        protected override async Task OnInitializedAsync()
+        {
+            await GetAllClenovi();
+            await GetRabotniStatusi();
+            await GetStepeniObrazovanie();
+            await GetOpstini();
+        }
+
+        private async Task GetAllClenovi()
+        {
+            clenovi = await Http.GetFromJsonAsync<IEnumerable<Clen>>("api/GetClenovi");
+            clenoviTmp = clenovi;
+            Search();
+        }
+
+        private async Task GetAllClenoviExcel()
+        {
+            clenoviExcel = await Http.GetFromJsonAsync<IEnumerable<ClenExcel>>("api/GetClenoviExcel");
+            SearchExcel();
+        }
+
+        private async Task GetRabotniStatusi()
+        {
+            rabStatusi = await Http.GetFromJsonAsync<IEnumerable<RabotenStatus>>("api/GetRabotniStatusi");
+        }
+
+        private async Task GetStepeniObrazovanie()
+        {
+            stepeniObrazovanie = await Http.GetFromJsonAsync<IEnumerable<StepenObrazovanie>>("api/GetStepeniObrazovanie");
+        }
+
+        private async Task GetOpstini()
+        {
+            opstini = await Http.GetFromJsonAsync<IEnumerable<string>>("api/GetOpstini");
+        }
+
+        void Clear()
+        {
+            clenovi = clenoviTmp;
+            clFilter = new ClenoviFilter();
+        }
+
+        void Search()
+        {
+            clenovi = clenoviTmp;
+            if (clFilter.Ime != null)
+            {
+                clenovi = clenovi.Where(x => x.Ime.ToUpper().Contains(clFilter.Ime.ToUpper()));
+            }
+            if (clFilter.Prezime != null)
+            {
+                clenovi = clenovi.Where(x => x.Prezime.ToUpper().Contains(clFilter.Prezime.ToUpper()));
+            }
+            if (clFilter.EMBG != null)
+            {
+                clenovi = clenovi.Where(x => x.EMBG.Contains(clFilter.EMBG));
+            }
+            if (clFilter.BrClenskaKarta != null)
+            {
+                clenovi = clenovi.Where(x => x.BrClenskaKarta.Contains(clFilter.BrClenskaKarta));
+            }
+            if (clFilter.DataRagjanjeOd != null)
+            {
+                clenovi = clenovi.Where(x => x.DataRagjanje <= clFilter.DataRagjanjeOd);
+            }
+            if (clFilter.DataRagjanjeDo != null)
+            {
+                clenovi = clenovi.Where(x => x.DataRagjanje >= clFilter.DataRagjanjeDo);
+            }
+        }
+
+        void SearchExcel()
+        {
+ 
+            if (clFilter.Ime != null)
+            {
+                clenoviExcel = clenoviExcel.Where(x => x.Ime.ToUpper().Contains(clFilter.Ime.ToUpper()));
+            }
+            if (clFilter.Prezime != null)
+            {
+                clenoviExcel = clenoviExcel.Where(x => x.Prezime.ToUpper().Contains(clFilter.Prezime.ToUpper()));
+            }
+            if (clFilter.EMBG != null)
+            {
+                clenoviExcel = clenoviExcel.Where(x => x.EMBG.Contains(clFilter.EMBG));
+            }
+            if (clFilter.BrClenskaKarta != null)
+            {
+                clenoviExcel = clenoviExcel.Where(x => x.BrClenskaKarta.Contains(clFilter.BrClenskaKarta));
+            }
+            if (clFilter.DataRagjanjeOd != null)
+            {
+                clenoviExcel = clenoviExcel.Where(x => x.DataRagjanje <= clFilter.DataRagjanjeOd);
+            }
+            if (clFilter.DataRagjanjeDo != null)
+            {
+                clenoviExcel = clenoviExcel.Where(x => x.DataRagjanje >= clFilter.DataRagjanjeDo);
+            }
+        }
+
+        private async Task NewClen()
+        {
+            Clen cl = new Clen();
+            var parameters = new DialogParameters();
+
+            parameters.Add("TitleIcon", Icons.Material.Filled.PersonAdd);
+            parameters.Add("TitleText", "Нов член");
+            parameters.Add("CancelButtonText", "Откажи");
+            parameters.Add("OKButtonText", "Внеси член");
+            parameters.Add("InsertUpdate", "insert");
+
+            parameters.Add("clen", cl);
+            parameters.Add("rabStatusi", rabStatusi);
+            parameters.Add("stepeniObrazovanie", stepeniObrazovanie);
+            parameters.Add("opstini", opstini);
+
+            DialogOptions opt = new DialogOptions() { DisableBackdropClick = true, MaxWidth = MaxWidth.Large };
+            var dialog = DialogService.Show<ClenDialog>("Нов член", parameters, opt);
+            var result = await dialog.Result;
+            if (!result.Cancelled)
+            {
+                Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+                Snackbar.Add("Успешно внесен член", Severity.Success);
+                await GetAllClenovi();
+            }
+
+        }
+
+        private async Task EditClen(int Id, bool IsReadonly)
+        {
+            Clen cl = await Http.GetFromJsonAsync<Clen>("api/GetClen/" + Id);
+
+            var parameters = new DialogParameters();
+
+            parameters.Add("TitleIcon", Icons.Material.Filled.Person);
+
+            parameters.Add("CancelButtonText", "Откажи");
+            if(IsReadonly)
+                parameters.Add("TitleText", "Детали за член");
+            else
+                parameters.Add("TitleText", "Измени член");
+
+            parameters.Add("OKButtonText", "Измени член");
+            parameters.Add("InsertUpdate", "update");
+            parameters.Add("IsReadOnly", IsReadonly);
+
+            parameters.Add("clen", cl);
+            parameters.Add("rabStatusi", rabStatusi);
+            parameters.Add("stepeniObrazovanie", stepeniObrazovanie);
+            parameters.Add("opstini", opstini);
+
+            DialogOptions opt = new DialogOptions() { DisableBackdropClick = true, MaxWidth = MaxWidth.Large };
+            var dialog = DialogService.Show<ClenDialog>("Измени член", parameters, opt);
+            var result = await dialog.Result;
+            if (!result.Cancelled)
+            {
+                Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+                Snackbar.Add("Успешно изменет член", Severity.Success);
+                await GetAllClenovi();
+            }
+        }
+
+        private async Task DeleteClen(int Id)
+        {
+            var parameters = new DialogParameters();
+            parameters.Add("TitleIcon", Icons.Material.Filled.DeleteForever);
+            parameters.Add("TitleText", "Бришење на член?");
+            string[] poraka = new string[] { "Внимание!", "Членот ќе биде избришан.", "Враќање назад не е можно." };
+
+            parameters.Add("ContentText", poraka);
+            parameters.Add("CancelButtonText", "Откажи");
+            parameters.Add("OKButtonText", "Избриши");
+
+            DialogOptions opt = new DialogOptions() { DisableBackdropClick = true, MaxWidth = MaxWidth.Large };
+            var dialog = DialogService.Show<MsgBox>("Бриши член", parameters, opt);
+            var result = await dialog.Result;
+            if (!result.Cancelled)
+            {
+                await Http.DeleteAsync("api/DeleteClen/" + Id);
+                Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+                Snackbar.Add("Успешно избришан член", Severity.Success);
+                await GetAllClenovi();
+            }
+        }
+
+        private async Task DownloadExcelFile()
+        {
+            await GetAllClenoviExcel();
+            var excelBytes = excelService.GenerateExcelWorkbook(clenoviExcel.ToList());
+            await js.InvokeVoidAsync("saveAsFile", $"Clenovi_{DateTime.Now.ToString("yyyyMMdd_HHmmss")}.xlsx", Convert.ToBase64String(excelBytes));
+        }
+    }

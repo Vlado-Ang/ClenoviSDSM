@@ -1,0 +1,13 @@
+﻿<MudNavMenu Class="mud-width-full">
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Почетна</MudNavLink>
+    <MudNavLink Href="/clenovi" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.PeopleAlt">Членови</MudNavLink>
+    <MudNavLink Href="/counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Payment">Членарина</MudNavLink>
+    <AuthorizeView Roles="Admin">
+        <Authorized>
+            <MudNavGroup Title="Администрација" Icon="@Icons.Material.Filled.Settings" Expanded="false">
+                <MudNavLink Href="/rabstatusi" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Engineering">Работен статус</MudNavLink>
+                <MudNavLink Href="/education" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.School">Образование</MudNavLink>
+            </MudNavGroup>
+        </Authorized>
+    </AuthorizeView>
+</MudNavMenu>

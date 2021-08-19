@@ -1,0 +1,39 @@
+﻿<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@TitleIcon" Class="mr-3 mb-n1" />
+            @TitleText
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        @foreach(string red in ContentText)
+        { 
+        <MudText>@red</MudText>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Default" OnClick="CancelClick" >@CancelButtonText</MudButton>
+        <MudButton Color="Color.Primary" OnClick="OkClick">@OKButtonText</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public string TitleIcon { get; set; }
+    [Parameter] public string TitleText { get; set; }
+    [Parameter] public string [] ContentText { get; set; }
+    [Parameter] public string CancelButtonText { get; set; }
+    [Parameter] public string OKButtonText { get; set; }
+
+    void CancelClick()
+    {
+        MudDialog.Cancel();
+    }
+
+    void OkClick()
+    {
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+}
