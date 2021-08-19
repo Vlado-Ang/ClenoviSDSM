@@ -33,6 +33,8 @@ namespace ClenoviSDSM.Shared.Models
         public string ObrazovnaInstitucija { get; set; }
         public string ObrNasoka { get; set; }
         public string IzbSpisok { get; set; }
+        public string OpisStatus { get; set; }
+        public string StepenObrOpis { get; set; }
     }
 
 }

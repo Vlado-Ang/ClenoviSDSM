@@ -43,7 +43,8 @@ namespace ClenoviSDSM.Server.Repositories
                 try
                 { 
                 res = await conn.QueryAsync<Clen>(
-                    "select * from tClenovi where Deleted = false",
+                    "select c.*, so.StepenObrOpis, rs.OpisStatus from tClenovi c left outer join tStepeniObrazovanie so on c.StepenObrId = so.Id " +
+                    "left outer join tRabotniStatusi rs on c.RabotenStatusId = rs.Id where Deleted = false",
                     commandType: System.Data.CommandType.Text
                     );
                 }
@@ -142,13 +143,15 @@ namespace ClenoviSDSM.Server.Repositories
                 par.Add("@LinkedInAccount", clen.LinkedInAccount);
                 par.Add("@IzbirackoMesto", clen.IzbirackoMesto);
                 par.Add("@IzbOpstina", clen.IzbOpstina);
+                par.Add("@ObrazovnaInstitucija", clen.ObrazovnaInstitucija);
+                par.Add("@ObrNasoka", clen.ObrNasoka);
 
                 await conn.OpenAsync();
                 try
                 { 
                 var res = await conn.ExecuteAsync(
                     "update tClenovi set Ime = @Ime, Prezime = @Prezime, EMBG = @EMBG, BrClenskaKarta = @BrClenskaKarta, DataRagjanje = @DataRagjanje, Telefon1 = @Telefon1, " +
-                    "Telefon2 = @Telefon2, eMail = @eMail, Adresa = @Adresa, Hobi = @Hobi, RabotenStatusId = @RabotenStatusId, StepenObrId = @StepenObrId, RabotenStatusOpis = @RabotenStatusOpis," +
+                    "Telefon2 = @Telefon2, eMail = @eMail, Adresa = @Adresa, Hobi = @Hobi, RabotenStatusId = @RabotenStatusId, StepenObrId = @StepenObrId, RabotenStatusOpis = @RabotenStatusOpis, ObrazovnaInstitucija = @ObrazovnaInstitucija, ObrNasoka = @ObrNasoka, " +
                     "FbAccount = @FbAccount, TwitterAccount = @TwitterAccount, InstagramAccount = @InstagramAccount, LinkedInAccount = @LinkedInAccount, IzbirackoMesto = @IzbirackoMesto, IzbOpstina = @IzbOpstina where Id = @Id",
                     par,
                     commandType: System.Data.CommandType.Text
