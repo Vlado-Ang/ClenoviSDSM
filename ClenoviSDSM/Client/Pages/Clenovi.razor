@@ -41,13 +41,16 @@
                         <MudTextField @bind-Value="@clFilter.EMBG" Label="ЕМБГ" Variant="Variant.Outlined" Margin="Margin.Dense" />
                     </MudItem>
                     <MudItem xs="12" sm="6" lg="4">
-                        <MudTextField @bind-Value="@clFilter.BrClenskaKarta" Label="Бр. на членска карта" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        <MudTextField @bind-Value="@clFilter.Telefon1" Label="Телефон 1" Variant="Variant.Outlined" Margin="Margin.Dense" />
                     </MudItem>
                     <MudItem xs="12" sm="6" lg="4">
                         <MudDatePicker Editable="true" @bind-Date="@clFilter.DataRagjanjeOd" Label="Датум раѓање пред" Variant="Variant.Outlined" Margin="Margin.Dense" />
                     </MudItem>
                     <MudItem xs="12" sm="6" lg="4">
                         <MudDatePicker Editable="true" @bind-Date="@clFilter.DataRagjanjeDo" Label="Датум раѓање после" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" lg="4">
+                        <MudTextField Editable="true" @bind-Value="@clFilter.eMail" Label="e-Mail" Variant="Variant.Outlined" Margin="Margin.Dense" />
                     </MudItem>
                     <MudItem xs="12" Class="d-inline-flex justify-end">
                         <MudButton Color="Color.Warning" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.ClearAll" OnClick="Clear" Class="ma-1">Исчисти</MudButton>
@@ -69,6 +72,7 @@
             <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Clen, object>(x => x.Ime)">Име</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortBy="new Func<Clen, object>(x => x.Prezime)">Презиме</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortBy="new Func<Clen, object>(x => x.EMBG)">ЕМБГ</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Clen, object>(x => x.Email)">e-Mail</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortBy="new Func<Clen, object>(x => x.DataRagjanje)">Дата на раѓање</MudTableSortLabel></MudTh>
             <MudTh>Акции</MudTh>
         </HeaderContent>
@@ -76,6 +80,7 @@
             <MudTd DataLabel="Име">@context.Ime</MudTd>
             <MudTd DataLabel="Презиме">@context.Prezime</MudTd>
             <MudTd DataLabel="ЕМБГ">@context.EMBG</MudTd>
+            <MudTd DataLabel="-Mail">@context.Email</MudTd>
             <MudTd DataLabel="Дата на раѓање">@string.Format("{0:dd.MM.yyyy}", context.DataRagjanje)</MudTd>
             <MudTd DataLabel="">
                 <AuthorizeView Roles="Admin,Editor">
@@ -171,38 +176,58 @@
         void Search()
         {
             clenovi = clenoviTmp;
-            if (clFilter.Ime != null)
+            if (clFilter.Ime != null && clFilter.Ime != "-")
             {
                 clenovi = clenovi.Where(x => x.Ime.ToUpper().Contains(clFilter.Ime.ToUpper()));
-            }
+            };
+            if (clFilter.Ime == "-")
+            {
+                clenovi = clenovi.Where(x => String.IsNullOrEmpty(x.Ime));
+            };
             if (clFilter.Prezime != null)
             {
                 clenovi = clenovi.Where(x => x.Prezime.ToUpper().Contains(clFilter.Prezime.ToUpper()));
-            }
+            };
             if (clFilter.EMBG != null)
             {
                 clenovi = clenovi.Where(x => x.EMBG.Contains(clFilter.EMBG));
-            }
-            if (clFilter.BrClenskaKarta != null)
+            };
+            if (clFilter.Telefon1 != null && clFilter.Telefon1 != "-")
             {
-                clenovi = clenovi.Where(x => x.BrClenskaKarta.Contains(clFilter.BrClenskaKarta));
-            }
+                clenovi = clenovi.Where(x => x.Telefon1.Contains(clFilter.Telefon1));
+            };
+            if(clFilter.Telefon1 == "-")
+            {
+                clenovi = clenovi.Where(x => String.IsNullOrEmpty(x.Telefon1));
+            };
             if (clFilter.DataRagjanjeOd != null)
             {
                 clenovi = clenovi.Where(x => x.DataRagjanje <= clFilter.DataRagjanjeOd);
-            }
+            };
             if (clFilter.DataRagjanjeDo != null)
             {
                 clenovi = clenovi.Where(x => x.DataRagjanje >= clFilter.DataRagjanjeDo);
-            }
+            };
+            if (clFilter.eMail != null && clFilter.eMail != "-")
+            {
+                clenovi = clenovi.Where(x => x.Email.ToUpper().Contains(clFilter.eMail.ToUpper()));
+            };
+            if (clFilter.eMail == "-")
+            {
+                clenovi = clenovi.Where(x => String.IsNullOrEmpty(x.Email));
+            };
         }
 
         void SearchExcel()
         {
- 
-            if (clFilter.Ime != null)
+
+            if (clFilter.Ime != null && clFilter.Ime != "-")
             {
                 clenoviExcel = clenoviExcel.Where(x => x.Ime.ToUpper().Contains(clFilter.Ime.ToUpper()));
+            };
+            if (clFilter.Ime == "-")
+            {
+                clenoviExcel = clenoviExcel.Where(x => String.IsNullOrEmpty(x.Ime));
             }
             if (clFilter.Prezime != null)
             {
@@ -212,10 +237,14 @@
             {
                 clenoviExcel = clenoviExcel.Where(x => x.EMBG.Contains(clFilter.EMBG));
             }
-            if (clFilter.BrClenskaKarta != null)
+            if (clFilter.Telefon1 != null && clFilter.Telefon1 != "-")
             {
-                clenoviExcel = clenoviExcel.Where(x => x.BrClenskaKarta.Contains(clFilter.BrClenskaKarta));
-            }
+                clenoviExcel = clenoviExcel.Where(x => x.Telefon1.Contains(clFilter.Telefon1));
+            };
+            if (clFilter.Telefon1 == "-")
+            {
+                clenoviExcel = clenoviExcel.Where(x => String.IsNullOrEmpty(x.Telefon1));
+            };
             if (clFilter.DataRagjanjeOd != null)
             {
                 clenoviExcel = clenoviExcel.Where(x => x.DataRagjanje <= clFilter.DataRagjanjeOd);
@@ -223,6 +252,14 @@
             if (clFilter.DataRagjanjeDo != null)
             {
                 clenoviExcel = clenoviExcel.Where(x => x.DataRagjanje >= clFilter.DataRagjanjeDo);
+            }
+            if (clFilter.eMail != null && clFilter.eMail != "-")
+            {
+                clenoviExcel = clenoviExcel.Where(x => x.Email.ToUpper().Contains(clFilter.eMail.ToUpper()));
+            };
+            if (clFilter.eMail == "-")
+            {
+                clenoviExcel = clenoviExcel.Where(x => String.IsNullOrEmpty(x.Email));
             }
         }
 

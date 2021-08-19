@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace ClenoviSDSM.Shared.Models
 {
     public class StepenObrazovanie
     {
         public int? Id { get; set; }
+        [Required(ErrorMessage = "Описот е задолжителен")]
         public string StepenObrOpis { get; set; }
     }
 }

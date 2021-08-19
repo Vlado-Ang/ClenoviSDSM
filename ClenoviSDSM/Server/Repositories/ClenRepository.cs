@@ -183,30 +183,6 @@ namespace ClenoviSDSM.Server.Repositories
             }
         }
 
-        public async Task<List<StepenObrazovanie>> GetStepeniObrazovanie()
-        {
-            using (SqliteConnection conn = new SqliteConnection(_connSQLite))
-            {
-                await conn.OpenAsync();
-                IEnumerable<StepenObrazovanie> res;
-                try
-                {
-                    res = await conn.QueryAsync<StepenObrazovanie>(
-                        "select * from tStepeniObrazovanie",
-                        commandType: System.Data.CommandType.Text
-                        );
-                }
-                catch (Exception e)
-                {
-                    throw;
-                }
-
-                var lista = res.ToList();
-                lista.Add(new StepenObrazovanie { Id = null, StepenObrOpis = "(Непознато)" });
-                return lista;
-            }
-        }
-
         public async Task<IEnumerable<string>> GetOpstini()
         {
             using (SqliteConnection conn = new SqliteConnection(_connSQLite))

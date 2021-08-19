@@ -56,17 +56,6 @@ namespace ClenoviSDSM.Server.Controllers
         }
 
         [HttpGet]
-        [Route("api/GetStepeniObrazovanie")]
-        public async Task<IEnumerable<StepenObrazovanie>> GetStepeniObrazovanie()
-        {
-            ClenRepository repo = new ClenRepository(_conf.GetConnectionString("dbClenovi"));
-
-            IEnumerable<StepenObrazovanie> res = await repo.GetStepeniObrazovanie();
-
-            return res;
-        }
-
-        [HttpGet]
         [Route("api/GetOpstini")]
         public async Task<IEnumerable<string>> GetOpstini()
         {

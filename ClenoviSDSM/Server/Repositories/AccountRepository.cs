@@ -36,8 +36,8 @@ namespace ClenoviSDSM.Server.Repositories
             },
             new User{
                 Id = 3,
-                FirstName = "Тест",
-                LastName = "Прегледувач",
+                FirstName = "Test",
+                LastName = "Viewer",
                 Username = "Viewer",
                 Password = "asdf",
                 Roles = new List<Role>

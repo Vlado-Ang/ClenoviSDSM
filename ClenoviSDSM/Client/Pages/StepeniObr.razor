@@ -1,4 +1,4 @@
-﻿@page "/rabstatusi"
+﻿@page "/stepeniobr"
 
 @using ClenoviSDSM.Shared.Models
 @using ClenoviSDSM.Client.Services
@@ -18,11 +18,11 @@ else
     <AuthorizeView Roles="Admin,Editor">
         <Authorized Context="aut">
             <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-16">
-                <MudTable Items="@rabStatusi" @bind-SelectedItem="selectedRS" Dense="true" Hover="true" Striped="true" Elevation="2" CanCancelEdit="true" RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" CancelEditTooltip="Откажи" CommitEditTooltip="Промени" OnCommitEditClick="@(() => UpdateRabotenStatus())">
+                <MudTable Items="@rabStatusi" @bind-SelectedItem="selectedRS" Dense="true" Hover="true" Striped="true" Elevation="2" CanCancelEdit="true" RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" CancelEditTooltip="Откажи" CommitEditTooltip="Промени" OnCommitEditClick="@(() => UpdateStepenObrazovanie())">
                     <ToolBarContent>
-                        <MudText Typo="Typo.h6">Работни статуси</MudText>
+                        <MudText Typo="Typo.h6">Степени на образование</MudText>
                         <MudSpacer />
-                        <MudTooltip Text="Нов раб.статус">
+                        <MudTooltip Text="Нов степен на обр.">
                             <MudFab OnClick="OpenDialog" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Medium" IconSize="Size.Medium" Class="ma-2" />
                         </MudTooltip>
                     </ToolBarContent>
@@ -32,16 +32,16 @@ else
                         <col style="width:50px;" />
                     </ColGroup>
                     <HeaderContent>
-                        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<RabotenStatus, object>(x => x.Id)">Id</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<StepenObrazovanie, object>(x => x.Id)">Id</MudTableSortLabel></MudTh>
                         <MudTh><MudTableSortLabel SortBy="new Func<RabotenStatus, object>(x => x.OpisStatus)">Опис</MudTableSortLabel></MudTh>
                         <MudTh>Акции</MudTh>
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd DataLabel="Id">@context.Id</MudTd>
-                        <MudTd DataLabel="Опис">@context.OpisStatus</MudTd>
+                        <MudTd DataLabel="Опис">@context.StepenObrOpis</MudTd>
                         <MudTd DataLabel="">
                             @if (context.Id != null)
-                                {
+                            {
                                 <AuthorizeView Roles="Admin">
                                     <Authorized Context="aut2">
                                         <MudTooltip Text="Избриши">
@@ -49,13 +49,13 @@ else
                                         </MudTooltip>
                                     </Authorized>
                                 </AuthorizeView>
-                                }
-                        </MudTd>
+                            }
+                            </MudTd>
                     </RowTemplate>
                     <RowEditingTemplate>
                         <MudTd DataLabel="Id">@context.Id</MudTd>
                         <MudTd DataLabel="Опис">
-                            <MudTextField @bind-Value="@context.OpisStatus" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="@(context.Id == null)" />
+                            <MudTextField @bind-Value="@context.StepenObrOpis" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="@(context.Id == null)" />
                         </MudTd>
                         <MudTd></MudTd>
                     </RowEditingTemplate>
@@ -71,15 +71,15 @@ else
         <MudDialog @bind-IsVisible="dialogVisible" >
             <TitleContent>
                 <MudText Typo="Typo.h6">
-                    <MudIcon Icon="@Icons.Material.Filled.Engineering" Class="mr-3" /> Нов работен статус
+                    <MudIcon Icon="@Icons.Material.Filled.Engineering" Class="mr-3" /> Нов степен на образование
                 </MudText>
             </TitleContent>
             <DialogContent>
-                <EditForm Model="@newRS" OnValidSubmit="NewRabotenStatus">
+                <EditForm Model="@newRS" OnValidSubmit="NewStepenObrazovanie">
                     <DataAnnotationsValidator />
                     <MudGrid>
                         <MudItem xs="12">
-                            <MudTextField @bind-Value="@newRS.OpisStatus" For="@(() => newRS.OpisStatus)" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Опис" />
+                            <MudTextField @bind-Value="@newRS.StepenObrOpis" For="@(() => newRS.StepenObrOpis)" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Опис" />
                         </MudItem>
                         <MudItem xs="12" Class="d-inline-flex justify-end">
                             <MudButton Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-10">Запиши</MudButton>
@@ -92,83 +92,83 @@ else
         }
 
         @code {
-            private IEnumerable<RabotenStatus> rabStatusi;
-            private RabotenStatus statusBeforeEdit;
-            private RabotenStatus selectedRS;
+            private IEnumerable<StepenObrazovanie> rabStatusi;
+            private StepenObrazovanie statusBeforeEdit;
+            private StepenObrazovanie selectedRS;
 
-            private RabotenStatus newRS = new RabotenStatus();
+            private StepenObrazovanie newRS = new StepenObrazovanie();
 
             private bool dialogVisible;
             private void OpenDialog() => dialogVisible = true;
 
             protected override async Task OnInitializedAsync()
             {
-                await GetRabotniStatusi();
+                await GetStepeniObrazovanie();
             }
 
-            private async Task GetRabotniStatusi()
+            private async Task GetStepeniObrazovanie()
             {
-                rabStatusi = await Http.GetFromJsonAsync<IEnumerable<RabotenStatus>>("api/GetRabotniStatusi");
+                rabStatusi = await Http.GetFromJsonAsync<IEnumerable<StepenObrazovanie>>("api/GetStepeniObrazovanie");
             }
 
-            private async Task UpdateRabotenStatus()
+            private async Task UpdateStepenObrazovanie()
             {
                 if (selectedRS.Id != null)
                 {
-                    await Http.PostAsJsonAsync("api/UpdateRabotenStatus", selectedRS);
+                    await Http.PostAsJsonAsync("api/UpdateStepenObrazovanie", selectedRS);
 
                     Snackbar.Configuration.SnackbarVariant = Variant.Filled;
                     Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
-                    Snackbar.Add("Успешно изменет раб.статус", Severity.Success);
-                    await GetRabotniStatusi();
+                    Snackbar.Add("Успешно изменет степен на образование", Severity.Success);
+                    await GetStepeniObrazovanie();
                 }
             }
 
-            private async Task NewRabotenStatus()
+            private async Task NewStepenObrazovanie()
             {
-                await Http.PostAsJsonAsync("api/InsertRabotenStatus", newRS);
+                await Http.PostAsJsonAsync("api/InsertStepenObrazovanie", newRS);
                 dialogVisible = false;
                 Snackbar.Configuration.SnackbarVariant = Variant.Filled;
                 Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
-                Snackbar.Add("Успешно внесен раб.статус", Severity.Success);
-                await GetRabotniStatusi();
+                Snackbar.Add("Успешно внесен степен на образование", Severity.Success);
+                await GetStepeniObrazovanie();
             }
 
             private void BackupItem(object element)
             {
                 statusBeforeEdit = new()
                 {
-                    Id = ((RabotenStatus)element).Id,
-                    OpisStatus = ((RabotenStatus)element).OpisStatus
+                    Id = ((StepenObrazovanie)element).Id,
+                    StepenObrOpis = ((StepenObrazovanie)element).StepenObrOpis
                 };
             }
 
             private void ResetItemToOriginalValues(object element)
             {
-                ((RabotenStatus)element).OpisStatus = statusBeforeEdit.OpisStatus;
+                ((StepenObrazovanie)element).StepenObrOpis = statusBeforeEdit.StepenObrOpis;
             }
 
             private async Task DeleteStatus(int? Id)
             {
                 var parameters = new DialogParameters();
                 parameters.Add("TitleIcon", Icons.Material.Filled.DeleteForever);
-                parameters.Add("TitleText", "Бришење на статус?");
-                string[] poraka = new string[] { "Внимание!", "Работниот статус ќе биде избришан.", "Враќање назад не е можно." };
+                parameters.Add("TitleText", "Бришење на степен?");
+                string[] poraka = new string[] { "Внимание!", "Степенот на образование ќе биде избришан.", "Враќање назад не е можно." };
 
                 parameters.Add("ContentText", poraka);
                 parameters.Add("CancelButtonText", "Откажи");
                 parameters.Add("OKButtonText", "Избриши");
 
                 DialogOptions opt = new DialogOptions() { DisableBackdropClick = true, MaxWidth = MaxWidth.Large };
-                var dialog = DialogService.Show<MsgBox>("Бриши статус", parameters, opt);
+                var dialog = DialogService.Show<MsgBox>("Бриши степен", parameters, opt);
                 var result = await dialog.Result;
                 if (!result.Cancelled)
                 {
-                    await Http.DeleteAsync("api/DeleteRabotenStatus/" + Id);
+                    await Http.DeleteAsync("api/DeleteStepenObrazovanie/" + Id);
                     Snackbar.Configuration.SnackbarVariant = Variant.Filled;
                     Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
                     Snackbar.Add("Успешно избришан статус", Severity.Success);
-                    await GetRabotniStatusi();
+                    await GetStepeniObrazovanie();
                 }
             }
         }

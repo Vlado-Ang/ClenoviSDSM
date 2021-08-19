@@ -11,8 +11,9 @@ namespace ClenoviSDSM.Shared.Models
         public string Ime { get; set; }
         public string Prezime { get; set; }
         public string EMBG { get; set; }
-        public string BrClenskaKarta { get; set; }
+        public string Telefon1 { get; set; }
         public DateTime? DataRagjanjeOd { get; set; }
         public DateTime? DataRagjanjeDo { get; set; }
+        public string eMail { get; set; }
     }
 }
