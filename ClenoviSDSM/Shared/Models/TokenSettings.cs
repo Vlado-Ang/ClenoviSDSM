@@ -13,4 +13,10 @@ namespace ClenoviSDSM.Shared.Models
         public string Key { get; set; }
         public string EncKey { get; set; }
     }
+
+    public class TokenModel
+    {
+        public string Token { get; set; }
+        public string RefreshToken { get; set; }
+    }
 }

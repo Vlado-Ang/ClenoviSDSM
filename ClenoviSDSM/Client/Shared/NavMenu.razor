@@ -1,12 +1,18 @@
 ﻿<MudNavMenu Class="mud-width-full">
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Почетна</MudNavLink>
-    <MudNavLink Href="/clenovi" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.PeopleAlt">Членови</MudNavLink>
-    <MudNavLink Href="/clenarina" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Payment">Членарина</MudNavLink>
     <AuthorizeView Roles="Admin,Editor">
         <Authorized>
+            <MudNavLink Href="/clenovi" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.PeopleAlt">Членови</MudNavLink>
             <MudNavGroup Title="Администрација" Icon="@Icons.Material.Filled.Settings" Expanded="false">
                 <MudNavLink Href="/rabstatusi" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Engineering">Работен статус</MudNavLink>
                 <MudNavLink Href="/stepeniobr" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.School">Образование</MudNavLink>
+                <MudNavLink Href="/slavi" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Celebration">Слави</MudNavLink>
+                <MudNavLink Href="/nacionalnosti" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.EmojiFlags">Националности</MudNavLink>
+                <AuthorizeView Roles="Admin">
+                    <Authorized Context="ctx">
+                        <MudNavLink Href="/korisnici" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.PeopleOutline">Корисници</MudNavLink>
+                    </Authorized>
+                </AuthorizeView>
             </MudNavGroup>
         </Authorized>
     </AuthorizeView>

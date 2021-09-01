@@ -1,6 +1,7 @@
 ﻿using ClenoviSDSM.Shared.Models;
 using ClenoviSDSM.Server.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace ClenoviSDSM.Server.Controllers
 {
+    [Authorize]
     [ApiController]
     public class ClenoviController : ControllerBase
     {
@@ -19,8 +21,6 @@ namespace ClenoviSDSM.Server.Controllers
         {
             this._conf = configuration;
         }
-
-        //_conf.GetConnectionString("dbClenovi");
 
         [HttpGet]
         [Route("api/GetClen/{id:int}")]
@@ -40,6 +40,17 @@ namespace ClenoviSDSM.Server.Controllers
             ClenRepository repo = new ClenRepository(_conf.GetConnectionString("dbClenovi"));
 
             IEnumerable<Clen> res = await repo.GetClenovi();
+
+            return res;
+        }
+
+        [HttpGet]
+        [Route("api/GetRodendeni/{denovi:int}")]
+        public async Task<IEnumerable<Clen>> GetRodendeni(int denovi)
+        {
+            ClenRepository repo = new ClenRepository(_conf.GetConnectionString("dbClenovi"));
+
+            IEnumerable<Clen> res = await repo.GetRodendeni(denovi);
 
             return res;
         }

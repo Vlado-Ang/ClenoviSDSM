@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text;
+using System.Security.Cryptography;
 
 namespace ClenoviSDSM.Server.Controllers
 {
@@ -14,6 +16,7 @@ namespace ClenoviSDSM.Server.Controllers
     {
         private readonly IConfiguration _conf;
         private IAccountRepository _accountRepository;
+        private static string salt = "1q2W3e4R";
 
         public AccountController(IConfiguration configuration, IAccountRepository accountRepository)
         {
@@ -23,15 +26,64 @@ namespace ClenoviSDSM.Server.Controllers
 
         [HttpPost]
         [Route("api/LoginUser")]
-        public IActionResult LoginUser(LoginModel model)
+        public async Task<IActionResult> LoginUser(LoginModel model)
         {
-            var token = _accountRepository.GetAuthenticationToken(model);
+            UserRepository _userRepo = new UserRepository(_conf.GetConnectionString("dbClenovi"));
 
-            if (string.IsNullOrEmpty(token))
+            User user = await _userRepo.GetKorisnik(model.Username);
+            TokenModel tm = new TokenModel();
+            tm.Token = String.Empty;
+
+            if (user != null)
+            {
+                string saltedPassword = model.Username + "-" + model.Password + "+" + salt;
+                string passwordHash = MD5Hash(saltedPassword);
+
+                if (user.Password != passwordHash)
+                {
+                    return NotFound();
+                }
+
+                tm = await _accountRepository.GetAuthenticationToken(user);
+            }
+            else
             {
                 return NotFound();
             }
-            return Ok(new { token });
+            return Ok(tm);
+        }
+
+        [HttpPost]
+        [Route("api/ActivateAccessTokenByRefresh")]
+        public async Task<IActionResult> ActivateAccessTokenByRefresh(TokenModel refreshToken)
+        {
+            var resultTokenModel = await _accountRepository.ActivateTokenUsingRefreshToken(refreshToken);
+            if (refreshToken == null)
+            {
+                return NotFound();
+            }
+            return Ok(resultTokenModel);
+        }
+
+        public static string MD5Hash(string text)
+        {
+            MD5 md5 = new MD5CryptoServiceProvider();
+
+            //compute hash from the bytes of text  
+            md5.ComputeHash(ASCIIEncoding.ASCII.GetBytes(text));
+
+            //get hash result after compute it  
+            byte[] result = md5.Hash;
+
+            StringBuilder strBuilder = new StringBuilder();
+            for (int i = 0; i < result.Length; i++)
+            {
+                //change it into 2 hexadecimal digits  
+                //for each byte  
+                strBuilder.Append(result[i].ToString("x2"));
+            }
+
+            return strBuilder.ToString();
         }
 
     }

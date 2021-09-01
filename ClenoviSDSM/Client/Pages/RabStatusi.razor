@@ -2,10 +2,14 @@
 
 @using ClenoviSDSM.Shared.Models
 @using ClenoviSDSM.Client.Services
+@using ClenoviSDSM.Client.Auth
 
 @inject HttpClient Http
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject ITokenManagerService _tokenService
+@inject NavigationManager navMgr
+@inject AuthenticationStateProvider customProvider
 
 @if (rabStatusi == null)
 {
@@ -27,17 +31,14 @@ else
                         </MudTooltip>
                     </ToolBarContent>
                     <ColGroup>
-                        <col style="width:50px;" />
                         <col />
                         <col style="width:50px;" />
                     </ColGroup>
                     <HeaderContent>
-                        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<RabotenStatus, object>(x => x.Id)">Id</MudTableSortLabel></MudTh>
-                        <MudTh><MudTableSortLabel SortBy="new Func<RabotenStatus, object>(x => x.OpisStatus)">Опис</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<RabotenStatus, object>(x => x.OpisStatus)">Опис</MudTableSortLabel></MudTh>
                         <MudTh>Акции</MudTh>
                     </HeaderContent>
                     <RowTemplate>
-                        <MudTd DataLabel="Id">@context.Id</MudTd>
                         <MudTd DataLabel="Опис">@context.OpisStatus</MudTd>
                         <MudTd DataLabel="">
                             @if (context.Id != null)
@@ -53,7 +54,6 @@ else
                         </MudTd>
                     </RowTemplate>
                     <RowEditingTemplate>
-                        <MudTd DataLabel="Id">@context.Id</MudTd>
                         <MudTd DataLabel="Опис">
                             <MudTextField @bind-Value="@context.OpisStatus" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="@(context.Id == null)" />
                         </MudTd>
@@ -68,107 +68,173 @@ else
     </AuthorizeView>
 
 
-        <MudDialog @bind-IsVisible="dialogVisible" >
-            <TitleContent>
-                <MudText Typo="Typo.h6">
-                    <MudIcon Icon="@Icons.Material.Filled.Engineering" Class="mr-3" /> Нов работен статус
-                </MudText>
-            </TitleContent>
-            <DialogContent>
-                <EditForm Model="@newRS" OnValidSubmit="NewRabotenStatus">
-                    <DataAnnotationsValidator />
-                    <MudGrid>
-                        <MudItem xs="12">
-                            <MudTextField @bind-Value="@newRS.OpisStatus" For="@(() => newRS.OpisStatus)" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Опис" />
-                        </MudItem>
-                        <MudItem xs="12" Class="d-inline-flex justify-end">
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-10">Запиши</MudButton>
-                        </MudItem>
-                    </MudGrid>
-                </EditForm>
-            </DialogContent>
-        </MudDialog>
+    <MudDialog @bind-IsVisible="dialogVisible">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Engineering" Class="mr-3" /> Нов работен статус
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <EditForm Model="@newRS" OnValidSubmit="NewRabotenStatus">
+                <DataAnnotationsValidator />
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="@newRS.OpisStatus" For="@(() => newRS.OpisStatus)" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Опис" />
+                    </MudItem>
+                    <MudItem xs="12" Class="d-inline-flex justify-end">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-10">Запиши</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </DialogContent>
+    </MudDialog>
 
+}
+
+@code {
+    private IEnumerable<RabotenStatus> rabStatusi;
+    private RabotenStatus statusBeforeEdit;
+    private RabotenStatus selectedRS;
+
+    private RabotenStatus newRS = new RabotenStatus();
+
+    private bool dialogVisible;
+    private void OpenDialog() => dialogVisible = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetRabotniStatusi();
+    }
+
+    private async Task GetRabotniStatusi()
+    {
+        string token = await _tokenService.GetTokenAsync();
+        Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
+        var res = await Http.GetAsync("api/GetRabotniStatusi");
+        if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            (customProvider as CustomAuthenticationProvider).Notify();
+            navMgr.NavigateTo("/");
         }
+        else if(res.IsSuccessStatusCode)
+        {
+            rabStatusi = await res.Content.ReadFromJsonAsync<IEnumerable<RabotenStatus>>();
+        }
+        else
+        {
+            Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+            Snackbar.Add("Се случи грешка при читање на статусите", Severity.Error);
+        }
+    }
 
-        @code {
-            private IEnumerable<RabotenStatus> rabStatusi;
-            private RabotenStatus statusBeforeEdit;
-            private RabotenStatus selectedRS;
+    private async Task UpdateRabotenStatus()
+    {
+        if (selectedRS.Id != null)
+        {
+            string token = await _tokenService.GetTokenAsync();
+            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
+            var res = await Http.PostAsJsonAsync("api/UpdateRabotenStatus", selectedRS);
 
-            private RabotenStatus newRS = new RabotenStatus();
-
-            private bool dialogVisible;
-            private void OpenDialog() => dialogVisible = true;
-
-            protected override async Task OnInitializedAsync()
+            if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                await GetRabotniStatusi();
+                (customProvider as CustomAuthenticationProvider).Notify();
+                navMgr.NavigateTo("/");
             }
-
-            private async Task GetRabotniStatusi()
+            else if (res.IsSuccessStatusCode)
             {
-                rabStatusi = await Http.GetFromJsonAsync<IEnumerable<RabotenStatus>>("api/GetRabotniStatusi");
-            }
-
-            private async Task UpdateRabotenStatus()
-            {
-                if (selectedRS.Id != null)
-                {
-                    await Http.PostAsJsonAsync("api/UpdateRabotenStatus", selectedRS);
-
-                    Snackbar.Configuration.SnackbarVariant = Variant.Filled;
-                    Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
-                    Snackbar.Add("Успешно изменет раб.статус", Severity.Success);
-                    await GetRabotniStatusi();
-                }
-            }
-
-            private async Task NewRabotenStatus()
-            {
-                await Http.PostAsJsonAsync("api/InsertRabotenStatus", newRS);
-                dialogVisible = false;
                 Snackbar.Configuration.SnackbarVariant = Variant.Filled;
                 Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
-                Snackbar.Add("Успешно внесен раб.статус", Severity.Success);
+                Snackbar.Add("Успешно изменет раб.статус", Severity.Success);
                 await GetRabotniStatusi();
             }
-
-            private void BackupItem(object element)
+            else
             {
-                statusBeforeEdit = new()
-                {
-                    Id = ((RabotenStatus)element).Id,
-                    OpisStatus = ((RabotenStatus)element).OpisStatus
-                };
-            }
-
-            private void ResetItemToOriginalValues(object element)
-            {
-                ((RabotenStatus)element).OpisStatus = statusBeforeEdit.OpisStatus;
-            }
-
-            private async Task DeleteStatus(int? Id)
-            {
-                var parameters = new DialogParameters();
-                parameters.Add("TitleIcon", Icons.Material.Filled.DeleteForever);
-                parameters.Add("TitleText", "Бришење на статус?");
-                string[] poraka = new string[] { "Внимание!", "Работниот статус ќе биде избришан.", "Враќање назад не е можно." };
-
-                parameters.Add("ContentText", poraka);
-                parameters.Add("CancelButtonText", "Откажи");
-                parameters.Add("OKButtonText", "Избриши");
-
-                DialogOptions opt = new DialogOptions() { DisableBackdropClick = true, MaxWidth = MaxWidth.Large };
-                var dialog = DialogService.Show<MsgBox>("Бриши статус", parameters, opt);
-                var result = await dialog.Result;
-                if (!result.Cancelled)
-                {
-                    await Http.DeleteAsync("api/DeleteRabotenStatus/" + Id);
-                    Snackbar.Configuration.SnackbarVariant = Variant.Filled;
-                    Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
-                    Snackbar.Add("Успешно избришан статус", Severity.Success);
-                    await GetRabotniStatusi();
-                }
+                Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+                Snackbar.Add("Се случи грешка при ажурирање на статусот", Severity.Error);
             }
         }
+    }
+
+    private async Task NewRabotenStatus()
+    {
+        string token = await _tokenService.GetTokenAsync();
+        Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
+        var res = await Http.PostAsJsonAsync("api/InsertRabotenStatus", newRS);
+        dialogVisible = false;
+
+        if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            (customProvider as CustomAuthenticationProvider).Notify();
+            navMgr.NavigateTo("/");
+        }
+        else if (res.IsSuccessStatusCode)
+        {
+            Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+            Snackbar.Add("Успешно внесен раб.статус", Severity.Success);
+            await GetRabotniStatusi();
+        }
+        else
+        {
+            Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+            Snackbar.Add("Се случи грешка при внес на статусот", Severity.Error);
+        }
+    }
+
+    private void BackupItem(object element)
+    {
+        statusBeforeEdit = new()
+        {
+            Id = ((RabotenStatus)element).Id,
+            OpisStatus = ((RabotenStatus)element).OpisStatus
+        };
+    }
+
+    private void ResetItemToOriginalValues(object element)
+    {
+        ((RabotenStatus)element).OpisStatus = statusBeforeEdit.OpisStatus;
+    }
+
+    private async Task DeleteStatus(int? Id)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("TitleIcon", Icons.Material.Filled.DeleteForever);
+        parameters.Add("TitleText", "Бришење на статус?");
+        string[] poraka = new string[] { "Внимание!", "Работниот статус ќе биде избришан.", "Враќање назад не е можно." };
+
+        parameters.Add("ContentText", poraka);
+        parameters.Add("CancelButtonText", "Откажи");
+        parameters.Add("OKButtonText", "Избриши");
+
+        DialogOptions opt = new DialogOptions() { DisableBackdropClick = true, MaxWidth = MaxWidth.Large };
+        var dialog = DialogService.Show<MsgBox>("Бриши статус", parameters, opt);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            string token = await _tokenService.GetTokenAsync();
+            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
+            var res = await Http.DeleteAsync("api/DeleteRabotenStatus/" + Id);
+            if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                (customProvider as CustomAuthenticationProvider).Notify();
+                navMgr.NavigateTo("/");
+            }
+            else if (res.IsSuccessStatusCode)
+            {
+                Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+                Snackbar.Add("Успешно избришан раб.статус", Severity.Success);
+                await GetRabotniStatusi();
+            }
+            else
+            {
+                Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+                Snackbar.Add("Се случи грешка при бришење на статусот", Severity.Error);
+            }
+        }
+    }
+}

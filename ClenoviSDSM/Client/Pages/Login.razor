@@ -1,0 +1,74 @@
+﻿@page "/"
+
+@using ClenoviSDSM.Shared.Models
+@using ClenoviSDSM.Client.Services
+@inject IAcountService _accountService
+@inject ISnackbar Snackbar
+
+<AuthorizeView>
+    <Authorized>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-16">
+            <MudText Typo="Typo.h4" GutterBottom="true">Добредојдовте!</MudText>
+            <MudText Class="mb-8">Ова е апликација со која се врши ажурирање на членовите на СДСМ во општина Бутел</MudText>
+        </MudContainer>
+    </Authorized>
+    <NotAuthorized>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-16">
+            <MudContainer Class="d-flex justify-center align-center" Style="margin-top: 120px;">
+                <MudPaper Elevation="2" Class="pa-10" style="text-align:center">
+                    <MudContainer Class="d-flex flex-column justify-center" style="width: 350px;">
+                        <MudText Typo="Typo.h5">Најава на корисник</MudText>
+                        <EditForm Model="@model" OnValidSubmit="LoginUser" Context="ctx">
+                            <DataAnnotationsValidator />
+                            <MudTextField Label="Корисник" @bind-Value="@model.Username" Variant="Variant.Outlined" For="@(() => model.Username)" />
+                            <MudTextField Label="Лозинка" @bind-Value="@model.Password" Variant="Variant.Outlined" For="@(() => model.Password)" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="TogglePasswordVisibility" />
+                            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Login" Class="align-self-center mt-6" Color="Color.Primary" ButtonType="ButtonType.Submit">Најави се</MudButton>
+                        </EditForm>
+                    </MudContainer>
+
+                </MudPaper>
+            </MudContainer>
+        </MudContainer>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private LoginModel model = new LoginModel();
+
+    bool PasswordVisibility;
+    InputType PasswordInput = InputType.Password;
+    string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    void TogglePasswordVisibility()
+    {
+        @if (PasswordVisibility)
+        {
+            PasswordVisibility = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else
+        {
+            PasswordVisibility = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
+
+    private async Task LoginUser()
+    {
+        bool login = await _accountService.LoginAsync(model);
+        if (!login)
+        {
+            Snackbar.Clear();
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.BottomCenter;
+            Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+            Snackbar.Add("Погрешно корисничко име или лозинка", Severity.Error);
+        }
+    }
+
+    private async Task Logout()
+    {
+        await _accountService.LogoutAsync();
+    }
+}

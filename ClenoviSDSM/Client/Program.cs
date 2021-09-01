@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Http;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -13,6 +14,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using ClenoviSDSM.Client.Auth;
 using ClenoviSDSM.Client.Services;
 using Blazored.LocalStorage;
+using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 
 namespace ClenoviSDSM.Client
 {
@@ -47,14 +49,16 @@ namespace ClenoviSDSM.Client
 
             CultureInfo.DefaultThreadCurrentCulture = mkCulture;
             CultureInfo.DefaultThreadCurrentUICulture = mkCulture;
+            builder.Services.AddAuthorizationCore();  
 
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
             builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationProvider>();
-            builder.Services.AddAuthorizationCore();
-            builder.Services.AddScoped<IAcountService, AccountService>();
-            builder.Services.AddScoped<IExportExcelService, ExportExcelService>();
+          
             builder.Services.AddMudServices();
             builder.Services.AddBlazoredLocalStorage();
+            builder.Services.AddScoped<IAcountService, AccountService>();
+            builder.Services.AddScoped<ITokenManagerService, TokenManagerService>();
+            builder.Services.AddScoped<IExportExcelService, ExportExcelService>();
 
             await builder.Build().RunAsync();
         }

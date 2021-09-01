@@ -1,0 +1,325 @@
+﻿@page "/korisnici"
+
+@using ClenoviSDSM.Shared.Models
+@using ClenoviSDSM.Client.Services
+@using ClenoviSDSM.Client.Auth
+
+@inject HttpClient Http
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject ITokenManagerService _tokenService
+@inject NavigationManager navMgr
+@inject AuthenticationStateProvider customProvider
+
+@if (korisnici == null)
+{
+    <MudOverlay Visible="true" DarkBackground="true">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    </MudOverlay>
+}
+else
+{
+    <AuthorizeView Roles="Admin">
+        <Authorized Context="aut">
+            <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-16">
+                <MudTable Items="@korisnici" @bind-SelectedItem="selectedKorisnik" Dense="true" Hover="true" Striped="true" Elevation="2" CanCancelEdit="true" RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" CancelEditTooltip="Откажи" CommitEditTooltip="Промени" OnCommitEditClick="@(() => UpdateKorisnik())">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">Корисници</MudText>
+                        <MudSpacer />
+                        <MudTooltip Text="Нов корисник">
+                            <MudFab OnClick="OpenDialog" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Medium" IconSize="Size.Medium" Class="ma-2" />
+                        </MudTooltip>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<User, object>(x => x.Username)">Корисник</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<User, object>(x => x.FirstName)">Име</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<User, object>(x => x.LastName)">Презиме</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel SortBy="new Func<User, object>(x => x.RoleName)">Улога</MudTableSortLabel></MudTh>
+                        <MudTh>Акции</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Корисник">@context.Username</MudTd>
+                        <MudTd DataLabel="Име">@context.FirstName</MudTd>
+                        <MudTd DataLabel="Презиме">@context.LastName</MudTd>
+                        <MudTd DataLabel="Улога">@context.RoleName</MudTd>
+                        <MudTd DataLabel="">
+                            <MudTooltip Text="Избриши">
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Primary" OnClick="@(() => DeleteKorisnik(@context.Id))" />
+                            </MudTooltip>
+                            <MudTooltip Text="Промени лозинка">
+                                <MudIconButton Icon="@Icons.Material.Filled.LockOpen" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OpenCPDialog())" />
+                            </MudTooltip>
+                        </MudTd>
+                    </RowTemplate>
+                    <RowEditingTemplate>
+                        <MudTd DataLabel="Корисник">
+                            <MudTextField @bind-Value="@context.Username" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudTd>
+                        <MudTd DataLabel="Име">
+                            <MudTextField @bind-Value="@context.FirstName" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudTd>
+                        <MudTd DataLabel="Презиме">
+                            <MudTextField @bind-Value="@context.LastName" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudTd>
+                        <MudTd>
+                            <MudSelect T="string" @bind-Value="@context.RoleName" Label="Улога" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                <MudSelectItem Value="@("Admin")">Admin</MudSelectItem>
+                                <MudSelectItem Value="@("Editor")">Editor</MudSelectItem>
+                                <MudSelectItem Value="@("Viewer")">Viewer</MudSelectItem>
+                            </MudSelect>
+                        </MudTd>
+                    </RowEditingTemplate>
+                </MudTable>
+            </MudContainer>
+        </Authorized>
+        <NotAuthorized>
+            <MudText Typo="Typo.h5" GutterBottom="true">Не сте авторизирани!</MudText>
+        </NotAuthorized>
+    </AuthorizeView>
+
+
+    <MudDialog @bind-IsVisible="dialogVisible">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.PersonAddAlt" Class="mr-3" /> Нов корисник
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <EditForm Model="@newKorisnik" OnValidSubmit="NewKorisnik">
+                <DataAnnotationsValidator />
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="@newKorisnik.Username" For="@(() => newKorisnik.Username)" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Корисник" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="@newKorisnik.Password" For="@(() => newKorisnik.Password)" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Лозинка" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="@newKorisnik.Password2" For="@(() => newKorisnik.Password2)" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Лозинка повторно" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="@newKorisnik.FirstName" For="@(() => newKorisnik.FirstName)" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Име" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="@newKorisnik.LastName" For="@(() => newKorisnik.LastName)" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Презиме" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudSelect T="string" @bind-Value="@newKorisnik.RoleName" For="@(() => newKorisnik.RoleName)" Label="Улога" Variant="Variant.Outlined" Margin="Margin.Dense">
+                            <MudSelectItem Value="@("Admin")">Admin</MudSelectItem>
+                            <MudSelectItem Value="@("Editor")">Editor</MudSelectItem>
+                            <MudSelectItem Value="@("Viewer")">Viewer</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" Class="d-inline-flex justify-end">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-10">Запиши</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </DialogContent>
+    </MudDialog>
+
+    <MudDialog @bind-IsVisible="dialogCPVisible">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.LockOpen" Class="mr-3" /> Промена на лозинка
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <EditForm Model="@selectedKorisnik" OnValidSubmit="ChangePassword">
+                <DataAnnotationsValidator />
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="@selectedKorisnik.Password" For="@(() => selectedKorisnik.Password)" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Лозинка" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="@selectedKorisnik.Password2" For="@(() => selectedKorisnik.Password2)" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Лозинка повторно" />
+                    </MudItem>
+                    <MudItem xs="12" Class="d-inline-flex justify-end">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-10">Промени лозинка</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </EditForm>
+        </DialogContent>
+    </MudDialog>
+
+}
+
+@code {
+    private IEnumerable<User> korisnici;
+    private User korisnikBeforeEdit;
+    private User selectedKorisnik = new User();
+
+    private User newKorisnik = new User();
+
+    private bool dialogVisible;
+    private void OpenDialog() => dialogVisible = true;
+
+    private bool dialogCPVisible;
+    private void OpenCPDialog() => dialogCPVisible = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetKorisnici();
+    }
+
+    private async Task GetKorisnici()
+    {
+        string token = await _tokenService.GetTokenAsync();
+        Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
+        var res = await Http.GetAsync("api/GetKorisnici");
+        if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            (customProvider as CustomAuthenticationProvider).Notify();
+            navMgr.NavigateTo("/");
+        }
+        else if (res.IsSuccessStatusCode)
+        {
+            korisnici = await res.Content.ReadFromJsonAsync<IEnumerable<User>>();
+        }
+        else
+        {
+            Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+            Snackbar.Add("Се случи грешка при читање на корисниците", Severity.Error);
+        }
+    }
+
+    private async Task UpdateKorisnik()
+    {
+        selectedKorisnik.Password = "dummyPass";
+        selectedKorisnik.Password2 = "dummyPass";
+
+        string token = await _tokenService.GetTokenAsync();
+        Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
+        var res = await Http.PostAsJsonAsync("api/UpdateKorisnik", selectedKorisnik);
+        if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            (customProvider as CustomAuthenticationProvider).Notify();
+            navMgr.NavigateTo("/");
+        }
+        else if (res.IsSuccessStatusCode)
+        {
+            Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+            Snackbar.Add("Успешно изменет корисник", Severity.Success);
+            await GetKorisnici();
+        }
+        else
+        {
+            Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+            Snackbar.Add("Се случи грешка при ажурирање на корисникот", Severity.Error);
+        }
+    }
+
+    private async Task NewKorisnik()
+    {
+        string token = await _tokenService.GetTokenAsync();
+        Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
+        var res = await Http.PostAsJsonAsync("api/InsertKorisnik", newKorisnik);
+        dialogVisible = false;
+        if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            (customProvider as CustomAuthenticationProvider).Notify();
+            navMgr.NavigateTo("/");
+        }
+        else if (res.IsSuccessStatusCode)
+        {
+            Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+            Snackbar.Add("Успешно внесен корисник", Severity.Success);
+            await GetKorisnici();
+        }
+        else
+        {
+            Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+            Snackbar.Add("Се случи грешка при внес на корисникот", Severity.Error);
+        }
+    }
+
+    private async Task ChangePassword()
+    {
+        string token = await _tokenService.GetTokenAsync();
+        Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
+        var res = await Http.PostAsJsonAsync("api/ChangePassword", selectedKorisnik);
+        dialogCPVisible = false;
+        if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            (customProvider as CustomAuthenticationProvider).Notify();
+            navMgr.NavigateTo("/");
+        }
+        else if (res.IsSuccessStatusCode)
+        {
+            Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+            Snackbar.Add("Успешно променета лозинка", Severity.Success);
+            await GetKorisnici();
+        }
+        else
+        {
+            Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+            Snackbar.Add("Се случи грешка при промена на лозинка", Severity.Error);
+        }
+    }
+
+    private void BackupItem(object element)
+    {
+        korisnikBeforeEdit = new()
+        {
+            Username = ((User)element).Username,
+            FirstName = ((User)element).FirstName,
+            LastName = ((User)element).LastName,
+            RoleName = ((User)element).RoleName
+        };
+    }
+
+    private void ResetItemToOriginalValues(object element)
+    {
+        ((User)element).Username = korisnikBeforeEdit.Username;
+        ((User)element).FirstName = korisnikBeforeEdit.FirstName;
+        ((User)element).LastName = korisnikBeforeEdit.LastName;
+        ((User)element).RoleName = korisnikBeforeEdit.RoleName;
+    }
+
+    private async Task DeleteKorisnik(int Id)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("TitleIcon", Icons.Material.Filled.DeleteForever);
+        parameters.Add("TitleText", "Бришење на корисник?");
+        string[] poraka = new string[] { "Внимание!", "Корисникот ќе биде избришан.", "Враќање назад не е можно." };
+
+        parameters.Add("ContentText", poraka);
+        parameters.Add("CancelButtonText", "Откажи");
+        parameters.Add("OKButtonText", "Избриши");
+
+        DialogOptions opt = new DialogOptions() { DisableBackdropClick = true, MaxWidth = MaxWidth.Large };
+        var dialog = DialogService.Show<MsgBox>("Бриши корисник", parameters, opt);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            string token = await _tokenService.GetTokenAsync();
+            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
+            var res = await Http.DeleteAsync("api/DeleteKorisnik/" + Id);
+            if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                (customProvider as CustomAuthenticationProvider).Notify();
+                navMgr.NavigateTo("/");
+            }
+            else if (res.IsSuccessStatusCode)
+            {
+                Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+                Snackbar.Add("Успешно избришан корисник", Severity.Success);
+                await GetKorisnici();
+            }
+            else
+            {
+                Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+                Snackbar.Add("Се случи грешка при бришење на корисник", Severity.Error);
+            }
+        }
+    }
+}

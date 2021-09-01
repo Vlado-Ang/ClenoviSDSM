@@ -2,13 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ClenoviSDSM.Shared.Models;
 
 namespace ClenoviSDSM.Client.Services
 {
-    public interface IAcountService
+    public interface ITokenManagerService
     {
-        Task<bool> LoginAsync(LoginModel model);
-        Task<bool> LogoutAsync();
+        Task<string> GetTokenAsync();
     }
 }

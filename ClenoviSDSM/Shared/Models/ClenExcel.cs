@@ -31,6 +31,12 @@ namespace ClenoviSDSM.Shared.Models
         public string ObrNasoka { get; set; }
         [DisplayName("Избирачко место")]
         public string IzbirackoMesto { get; set; }
+        [DisplayName("Куќна слава")]
+        public string SlavaOpis { get; set; }
+        [DisplayName("Националност")]
+        public string NacOpis { get; set; }
+        [DisplayName("Пол")]
+        public string Pol { get; set; }
     }
 
 }

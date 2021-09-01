@@ -1,4 +1,4 @@
-﻿@page "/stepeniobr"
+﻿@page "/slavi"
 
 @using ClenoviSDSM.Shared.Models
 @using ClenoviSDSM.Client.Services
@@ -11,7 +11,7 @@
 @inject NavigationManager navMgr
 @inject AuthenticationStateProvider customProvider
 
-@if (stepeniObr == null)
+@if (slavi == null)
 {
     <MudOverlay Visible="true" DarkBackground="true">
         <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
@@ -22,11 +22,11 @@ else
     <AuthorizeView Roles="Admin,Editor">
         <Authorized Context="aut">
             <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-16">
-                <MudTable Items="@stepeniObr" @bind-SelectedItem="selectedRS" Dense="true" Hover="true" Striped="true" Elevation="2" CanCancelEdit="true" RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" CancelEditTooltip="Откажи" CommitEditTooltip="Промени" OnCommitEditClick="@(() => UpdateStepenObrazovanie())">
+                <MudTable Items="@slavi" @bind-SelectedItem="selectedRS" Dense="true" Hover="true" Striped="true" Elevation="2" CanCancelEdit="true" RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues" CancelEditTooltip="Откажи" CommitEditTooltip="Промени" OnCommitEditClick="@(() => UpdateSlava())">
                     <ToolBarContent>
-                        <MudText Typo="Typo.h6">Степени на образование</MudText>
+                        <MudText Typo="Typo.h6">Куќни слави</MudText>
                         <MudSpacer />
-                        <MudTooltip Text="Нов степен на обр.">
+                        <MudTooltip Text="Нова слава">
                             <MudFab OnClick="OpenDialog" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Medium" IconSize="Size.Medium" Class="ma-2" />
                         </MudTooltip>
                     </ToolBarContent>
@@ -35,18 +35,18 @@ else
                         <col style="width:50px;" />
                     </ColGroup>
                     <HeaderContent>
-                        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<StepenObrazovanie, object>(x => x.StepenObrOpis)">Опис</MudTableSortLabel></MudTh>
+                        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Slava, object>(x => x.SlavaOpis)">Име на слава</MudTableSortLabel></MudTh>
                         <MudTh>Акции</MudTh>
                     </HeaderContent>
                     <RowTemplate>
-                        <MudTd DataLabel="Опис">@context.StepenObrOpis</MudTd>
+                        <MudTd DataLabel="Име на слава">@context.SlavaOpis</MudTd>
                         <MudTd DataLabel="">
                             @if (context.Id != null)
                                 {
                                 <AuthorizeView Roles="Admin">
                                     <Authorized Context="aut2">
                                         <MudTooltip Text="Избриши">
-                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Primary" OnClick="@(() => DeleteStatus(@context.Id))" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Primary" OnClick="@(() =>  DeleteSlava(@context.Id))" />
                                         </MudTooltip>
                                     </Authorized>
                                 </AuthorizeView>
@@ -54,8 +54,8 @@ else
                         </MudTd>
                     </RowTemplate>
                     <RowEditingTemplate>
-                        <MudTd DataLabel="Опис">
-                            <MudTextField @bind-Value="@context.StepenObrOpis" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="@(context.Id == null)" />
+                        <MudTd DataLabel="Име на слава">
+                            <MudTextField @bind-Value="@context.SlavaOpis" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="@(context.Id == null)" />
                         </MudTd>
                         <MudTd></MudTd>
                     </RowEditingTemplate>
@@ -71,15 +71,15 @@ else
     <MudDialog @bind-IsVisible="dialogVisible">
         <TitleContent>
             <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.Engineering" Class="mr-3" /> Нов степен на образование
+                <MudIcon Icon="@Icons.Material.Filled.Celebration" Class="mr-3" /> Нова куќна слава
             </MudText>
         </TitleContent>
         <DialogContent>
-            <EditForm Model="@newRS" OnValidSubmit="NewStepenObrazovanie">
+            <EditForm Model="@newRS" OnValidSubmit="InsertSlava">
                 <DataAnnotationsValidator />
                 <MudGrid>
                     <MudItem xs="12">
-                        <MudTextField @bind-Value="@newRS.StepenObrOpis" For="@(() => newRS.StepenObrOpis)" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Опис" />
+                        <MudTextField @bind-Value="@newRS.SlavaOpis" For="@(() => newRS.SlavaOpis)" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Име на слава" />
                     </MudItem>
                     <MudItem xs="12" Class="d-inline-flex justify-end">
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Class="px-10">Запиши</MudButton>
@@ -92,25 +92,25 @@ else
 }
 
 @code {
-    private IEnumerable<StepenObrazovanie> stepeniObr;
-    private StepenObrazovanie statusBeforeEdit;
-    private StepenObrazovanie selectedRS;
+    private IEnumerable<Slava> slavi;
+    private Slava statusBeforeEdit;
+    private Slava selectedRS;
 
-    private StepenObrazovanie newRS = new StepenObrazovanie();
+    private Slava newRS = new Slava();
 
     private bool dialogVisible;
     private void OpenDialog() => dialogVisible = true;
 
     protected override async Task OnInitializedAsync()
     {
-        await GetStepeniObrazovanie();
+        await GetSlavi();
     }
 
-    private async Task GetStepeniObrazovanie()
+    private async Task GetSlavi()
     {
         string token = await _tokenService.GetTokenAsync();
         Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
-        var res = await Http.GetAsync("api/GetStepeniObrazovanie");
+        var res = await Http.GetAsync("api/GetSlavi");
         if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
             (customProvider as CustomAuthenticationProvider).Notify();
@@ -118,23 +118,24 @@ else
         }
         else if (res.IsSuccessStatusCode)
         {
-            stepeniObr = await res.Content.ReadFromJsonAsync<IEnumerable<StepenObrazovanie>>();
+            slavi = await res.Content.ReadFromJsonAsync<IEnumerable<Slava>>();
         }
         else
         {
             Snackbar.Configuration.SnackbarVariant = Variant.Filled;
             Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
-            Snackbar.Add("Се случи грешка при читање на степените на образование", Severity.Error);
+            Snackbar.Add("Се случи грешка при читање на славите", Severity.Error);
         }
     }
 
-    private async Task UpdateStepenObrazovanie()
+    private async Task UpdateSlava()
     {
         if (selectedRS.Id != null)
         {
             string token = await _tokenService.GetTokenAsync();
             Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
-            var res = await Http.PostAsJsonAsync("api/UpdateStepenObrazovanie", selectedRS);
+            var res = await Http.PostAsJsonAsync("api/UpdateSlava", selectedRS);
+
             if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
                 (customProvider as CustomAuthenticationProvider).Notify();
@@ -144,24 +145,26 @@ else
             {
                 Snackbar.Configuration.SnackbarVariant = Variant.Filled;
                 Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
-                Snackbar.Add("Успешно изменет степен на образование", Severity.Success);
-                await GetStepeniObrazovanie();
+                Snackbar.Add("Успешно изменето име на славата", Severity.Success);
+                await GetSlavi();
             }
             else
             {
                 Snackbar.Configuration.SnackbarVariant = Variant.Filled;
                 Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
-                Snackbar.Add("Се случи грешка при ажурирање на степенот на образование", Severity.Error);
+                Snackbar.Add("Се случи грешка при ажурирање на славата", Severity.Error);
             }
+
         }
     }
 
-    private async Task NewStepenObrazovanie()
+    private async Task InsertSlava()
     {
         string token = await _tokenService.GetTokenAsync();
         Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
-        var res = await Http.PostAsJsonAsync("api/InsertStepenObrazovanie", newRS);
+        var res = await Http.PostAsJsonAsync("api/InsertSlava", newRS);
         dialogVisible = false;
+
         if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
             (customProvider as CustomAuthenticationProvider).Notify();
@@ -171,51 +174,50 @@ else
         {
             Snackbar.Configuration.SnackbarVariant = Variant.Filled;
             Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
-            Snackbar.Add("Успешно внесен степен на образование", Severity.Success);
-            await GetStepeniObrazovanie();
+            Snackbar.Add("Успешно внесена слава", Severity.Success);
+            await GetSlavi();
         }
         else
         {
             Snackbar.Configuration.SnackbarVariant = Variant.Filled;
             Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
-            Snackbar.Add("Се случи грешка при внес на степенот на образование", Severity.Error);
+            Snackbar.Add("Се случи грешка при ажурирање на славата", Severity.Error);
         }
-
     }
 
     private void BackupItem(object element)
     {
         statusBeforeEdit = new()
         {
-            Id = ((StepenObrazovanie)element).Id,
-            StepenObrOpis = ((StepenObrazovanie)element).StepenObrOpis
+            Id = ((Slava)element).Id,
+            SlavaOpis = ((Slava)element).SlavaOpis
         };
     }
 
     private void ResetItemToOriginalValues(object element)
     {
-        ((StepenObrazovanie)element).StepenObrOpis = statusBeforeEdit.StepenObrOpis;
+        ((Slava)element).SlavaOpis = statusBeforeEdit.SlavaOpis;
     }
 
-    private async Task DeleteStatus(int? Id)
+    private async Task DeleteSlava(int? Id)
     {
         var parameters = new DialogParameters();
         parameters.Add("TitleIcon", Icons.Material.Filled.DeleteForever);
-        parameters.Add("TitleText", "Бришење на степен?");
-        string[] poraka = new string[] { "Внимание!", "Степенот на образование ќе биде избришан.", "Враќање назад не е можно." };
+        parameters.Add("TitleText", "Бришење на слава?");
+        string[] poraka = new string[] { "Внимание!", "Славата ќе биде избришана.", "Враќање назад не е можно." };
 
         parameters.Add("ContentText", poraka);
         parameters.Add("CancelButtonText", "Откажи");
         parameters.Add("OKButtonText", "Избриши");
 
         DialogOptions opt = new DialogOptions() { DisableBackdropClick = true, MaxWidth = MaxWidth.Large };
-        var dialog = DialogService.Show<MsgBox>("Бриши степен", parameters, opt);
+        var dialog = DialogService.Show<MsgBox>("Бриши слава", parameters, opt);
         var result = await dialog.Result;
         if (!result.Cancelled)
         {
             string token = await _tokenService.GetTokenAsync();
             Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
-            var res = await Http.DeleteAsync("api/DeleteStepenObrazovanie/" + Id);
+            var res = await Http.DeleteAsync("api/DeleteSlava/" + Id);
             if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
                 (customProvider as CustomAuthenticationProvider).Notify();
@@ -225,14 +227,14 @@ else
             {
                 Snackbar.Configuration.SnackbarVariant = Variant.Filled;
                 Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
-                Snackbar.Add("Успешно избришан статус", Severity.Success);
-                await GetStepeniObrazovanie();
+                Snackbar.Add("Успешно избришана слава", Severity.Success);
+                await GetSlavi();
             }
             else
             {
                 Snackbar.Configuration.SnackbarVariant = Variant.Filled;
                 Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
-                Snackbar.Add("Се случи грешка при бришење на степенот на образование", Severity.Error);
+                Snackbar.Add("Се случи грешка при бришење на славата", Severity.Error);
             }
         }
     }

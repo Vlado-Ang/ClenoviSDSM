@@ -28,10 +28,12 @@ namespace ClenoviSDSM.Client.Services
                 workSheet.Column(7).Width = 35;
                 workSheet.Column(8).Width = 25;
                 workSheet.Column(9).Width = 70;
-                workSheet.Column(10).Width = 25;
+                workSheet.Column(10).Width = 35;
                 workSheet.Column(11).Width = 70;
                 workSheet.Column(12).Width = 35;
                 workSheet.Column(13).Width = 17;
+                workSheet.Column(14).Width = 50;
+                workSheet.Column(15).Width = 20;
 
                 workSheet.Column(5).Style.Numberformat.Format = DateTimeFormatInfo.CurrentInfo.ShortDatePattern;
                 workSheet.Column(9).Style.WrapText = true;

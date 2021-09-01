@@ -17,3 +17,7 @@
         transform: rotate(360deg);
     }
 }
+
+.mud-table-container {
+    overflow-y: hidden !important;
+}

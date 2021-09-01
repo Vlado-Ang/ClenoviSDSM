@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ClenoviSDSM.Shared.Models
 {
@@ -17,5 +13,8 @@ namespace ClenoviSDSM.Shared.Models
         public string ObrazovnaInstitucija { get; set; }
         public string OpisStatus { get; set; }
         public string IzbirackoMesto { get; set; }
+        public string SlavaOpis { get; set; }
+        public string NacOpis { get; set; }
+        public string Pol { get; set; }
     }
 }

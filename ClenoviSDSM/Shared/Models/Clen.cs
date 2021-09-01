@@ -17,7 +17,6 @@ namespace ClenoviSDSM.Shared.Models
         public DateTime? DataRagjanje { get; set; }
         public string Telefon1 { get; set; }
         public string Telefon2 { get; set; }
-        [EmailAddress(ErrorMessage ="Внесете валидна мејл адреса")]
         public string Email { get; set; }
         public string Adresa { get; set; }
         public string Hobi { get; set; }
@@ -33,8 +32,14 @@ namespace ClenoviSDSM.Shared.Models
         public string ObrazovnaInstitucija { get; set; }
         public string ObrNasoka { get; set; }
         public string IzbSpisok { get; set; }
+        public int? SlavaId { get; set; }
+        [Required(ErrorMessage = "Полот е задолжителен")]
+        public string Pol { get; set; }
+        public int? NacionalnostId { get; set; }
         public string OpisStatus { get; set; }
         public string StepenObrOpis { get; set; }
+        public string SlavaOpis { get; set; }
+        public string NacOpis { get; set; }
     }
 
 }

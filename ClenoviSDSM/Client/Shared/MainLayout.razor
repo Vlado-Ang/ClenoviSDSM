@@ -8,51 +8,34 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<AuthorizeView>
-    <Authorized>
-        <MudLayout>
-            <MudAppBar Elevation="1">
-                <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-                <MudText Typo="Typo.h5" Class="ml-3">СДСМ-Бутел</MudText>
-                <MudSpacer />
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudText Typo="Typo.h5" Class="ml-3">СДСМ-Бутел</MudText>
+        <MudSpacer />
+        <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Color="Color.Inherit" />
+        <AuthorizeView>
+            <Authorized>
                 <MudText Typo="Typo.subtitle2">@ZemiImePrezime()</MudText>
-                <MudTooltip Text="Смени светла/темна тема">
-                    <MudIconButton Icon="@Icons.Material.Filled.Brightness4" Color="Color.Inherit" OnClick="@((e) => ToggleDarkMode())" />
-                </MudTooltip>
-                <MudTooltip Text="Одјави се">
-                    <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" OnClick="Logout" />
-                </MudTooltip>
-            </MudAppBar>
-            <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
-                <NavMenu />
-            </MudDrawer>
-            <MudMainContent>
-                @Body
-            </MudMainContent>
-        </MudLayout>
-    </Authorized>
-    <NotAuthorized>
-        <MudContainer Class="d-flex justify-center align-center" Style="margin-top: 120px;">
-            <MudPaper Elevation="2" Class="pa-10" style="text-align:center">
-                <MudContainer Class="d-flex flex-column justify-center" style="width: 350px;">
-                    <MudText Typo="Typo.h5">Најава на корисник</MudText>
-                    <EditForm Model="@model" OnValidSubmit="Login" Context="ctx">
-                        <DataAnnotationsValidator />
-                        <MudTextField Label="Корисник" @bind-Value="@model.Username" Variant="Variant.Outlined" For="@(() => model.Username)" />
-                        <MudTextField Label="Лозинка" @bind-Value="@model.Password" Variant="Variant.Outlined" For="@(() => model.Password)" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="TogglePasswordVisibility" />
-                        <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Login" Class="align-self-center mt-6" Color="Color.Primary" ButtonType="ButtonType.Submit">Најави се</MudButton>
-                    </EditForm>
-                </MudContainer>
-                <MudOverlay Visible="spinnerVisible" DarkBackground="true" Absolute="true">
-                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-                </MudOverlay>
-            </MudPaper>
-        </MudContainer>
-    </NotAuthorized>
-</AuthorizeView>
+            </Authorized>
+        </AuthorizeView>
+        <MudTooltip Text="Смени светла/темна тема">
+            <MudIconButton Icon="@Icons.Material.Filled.Brightness4" Color="Color.Inherit" OnClick="@((e) => ToggleDarkMode())" />
+        </MudTooltip>
+        <MudTooltip Text="Одјави се">
+            <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" OnClick="Logout" />
+        </MudTooltip>
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent>
+        @Body
+    </MudMainContent>
+</MudLayout> 
 @code {
 
-        [CascadingParameter] private Task<AuthenticationState> authState { get; set; }
+    [CascadingParameter] private Task<AuthenticationState> authState { get; set; }
 
     private IList<Claim> userClaim
     {
@@ -73,46 +56,9 @@
         return ip.Value;
     }
 
-    private LoginModel model = new LoginModel();
-
-    bool PasswordVisibility;
-    bool spinnerVisible = false;
-    InputType PasswordInput = InputType.Password;
-    string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
-
     protected override void OnInitialized()
     {
         currentTheme = LightTheme;
-    }
-
-    void TogglePasswordVisibility()
-    {
-        @if (PasswordVisibility)
-        {
-            PasswordVisibility = false;
-            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
-            PasswordInput = InputType.Password;
-        }
-        else
-        {
-            PasswordVisibility = true;
-            PasswordInputIcon = Icons.Material.Filled.Visibility;
-            PasswordInput = InputType.Text;
-        }
-    }
-
-    private async Task Login()
-    {
-        spinnerVisible = true;
-        bool login = await _accountService.LoginAsync(model);
-        spinnerVisible = false;
-        if (!login)
-        {
-            Snackbar.Clear();
-            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.BottomCenter;
-            Snackbar.Configuration.SnackbarVariant = Variant.Filled;
-            Snackbar.Add("Погрешно корисничко име или лозинка", Severity.Error);
-        }
     }
 
     private async Task Logout()

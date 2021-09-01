@@ -39,6 +39,7 @@ namespace ClenoviSDSM.Client.Services
             AuthResponse authData = await response.Content.ReadFromJsonAsync<AuthResponse>();
 
             await _localStorageService.SetItemAsync("token", authData.Token);
+            await _localStorageService.SetItemAsync("refreshToken", authData.RefreshToken);
             (_customAuthenticationProvider as CustomAuthenticationProvider).Notify();
             return true;
         }
@@ -46,6 +47,7 @@ namespace ClenoviSDSM.Client.Services
         public async Task<bool> LogoutAsync()
         {
             await _localStorageService.RemoveItemAsync("token");
+            await _localStorageService.RemoveItemAsync("refreshToken");
             (_customAuthenticationProvider as CustomAuthenticationProvider).Notify();
             return true;
         }

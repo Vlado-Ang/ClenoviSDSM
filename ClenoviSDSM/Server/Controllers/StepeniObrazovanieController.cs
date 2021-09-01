@@ -1,6 +1,7 @@
 ﻿using ClenoviSDSM.Shared.Models;
 using ClenoviSDSM.Server.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace ClenoviSDSM.Server.Controllers
 {
+    [Authorize]
     [ApiController]
     public class StepeniObrazovanieController : ControllerBase
     {

@@ -43,10 +43,39 @@ namespace ClenoviSDSM.Server.Repositories
                 try
                 { 
                 res = await conn.QueryAsync<Clen>(
-                    "select c.*, so.StepenObrOpis, rs.OpisStatus from tClenovi c left outer join tStepeniObrazovanie so on c.StepenObrId = so.Id " +
-                    "left outer join tRabotniStatusi rs on c.RabotenStatusId = rs.Id where Deleted = false",
+                    "select c.*, so.StepenObrOpis, rs.OpisStatus, sl.SlavaOpis, n.NacOpis from tClenovi c left outer join tStepeniObrazovanie so on c.StepenObrId = so.Id " +
+                    "left outer join tRabotniStatusi rs on c.RabotenStatusId = rs.Id left outer join tSlavi sl on c.SlavaId = sl.Id left outer join tNacionalnosti n " +
+                    "on c.NacionalnostId = n.Id where c.Deleted = false",
                     commandType: System.Data.CommandType.Text
                     );
+                }
+                catch (Exception e)
+                {
+                    throw;
+                }
+                return res;
+            }
+        }
+
+        public async Task<IEnumerable<Clen>> GetRodendeni(int denovi)
+        {
+            using (SqliteConnection conn = new SqliteConnection(_connSQLite))
+            {
+                await conn.OpenAsync();
+                IEnumerable<Clen> res;
+                DynamicParameters par = new DynamicParameters();
+
+                par.Add("@denovi", denovi);
+                try
+                {
+                    res = await conn.QueryAsync<Clen>(
+                        "SELECT c.*, so.StepenObrOpis, rs.OpisStatus, sl.SlavaOpis, n.NacOpis, strftime('%j', DataRagjanje, 'localtime') - strftime('%j', 'now', 'localtime') AS days_remaining " +
+                        "FROM tClenovi c left outer join tStepeniObrazovanie so on c.StepenObrId = so.Id  left outer join tSlavi sl on c.SlavaId = sl.Id " +
+                        "left outer join tRabotniStatusi rs on c.RabotenStatusId = rs.Id  left outer join tNacionalnosti n on c.NacionalnostId = n.Id WHERE days_remaining between 0 and @denovi and c.Deleted = false " +
+                        "and 0 = case when days_remaining = 0 and strftime('%d', DataRagjanje) <> strftime('%d', 'now') then 1 else 0 end",
+                        par,
+                        commandType: System.Data.CommandType.Text
+                        );
                 }
                 catch (Exception e)
                 {
@@ -65,9 +94,9 @@ namespace ClenoviSDSM.Server.Repositories
                 try
                 {
                     res = await conn.QueryAsync<ClenExcel>(
-                        "select Ime,Prezime,EMBG,DataRagjanje,Telefon1,Email,OpisStatus,RabotenStatusOpis,StepenObrOpis,ObrazovnaInstitucija,ObrNasoka,IzbirackoMesto,BrClenskaKarta " +
-                        "from tClenovi c left outer join tStepeniObrazovanie so on c.StepenObrId = so.Id " +
-                        "left outer join tRabotniStatusi rs on c.RabotenStatusId = rs.Id where c.Deleted = false",
+                        "select Ime,Prezime,EMBG,DataRagjanje,Telefon1,Email,OpisStatus,RabotenStatusOpis,StepenObrOpis,ObrazovnaInstitucija,ObrNasoka,IzbirackoMesto,BrClenskaKarta,SlavaOpis, NacOpis, Pol " +
+                        "from tClenovi c left outer join tStepeniObrazovanie so on c.StepenObrId = so.Id  left outer join tSlavi sl on c.SlavaId = sl.Id " +
+                        "left outer join tRabotniStatusi rs on c.RabotenStatusId = rs.Id  left outer join tNacionalnosti n on c.NacionalnostId = n.Id where c.Deleted = false",
                         commandType: System.Data.CommandType.Text
                         );
                 }
@@ -104,12 +133,15 @@ namespace ClenoviSDSM.Server.Repositories
                 par.Add("@LinkedInAccount", clen.LinkedInAccount);
                 par.Add("@IzbirackoMesto", clen.IzbirackoMesto);
                 par.Add("@IzbOpstina", clen.IzbOpstina);
+                par.Add("@SlavaId", clen.SlavaId);
+                par.Add("@NacionalnostId", clen.NacionalnostId);
+                par.Add("@Pol", clen.Pol);
 
                 await conn.OpenAsync();
 
                 var res = await conn.ExecuteAsync(
-                    "insert into tClenovi (Ime, Prezime, EMBG, BrClenskaKarta, DataRagjanje, Telefon1, Telefon2, eMail, Adresa, Hobi, RabotenStatusId, StepenObrId, RabotenStatusOpis, FbAccount, TwitterAccount, InstagramAccount, LinkedInAccount, IzbirackoMesto, IzbOpstina) " +
-                    "values (@Ime, @Prezime, @EMBG, @BrClenskaKarta, @DataRagjanje, @Telefon1, @Telefon2, @eMail, @Adresa, @Hobi, @RabotenStatusId, @StepenObrId, @RabotenStatusOpis, @FbAccount, @TwitterAccount, @InstagramAccount, @LinkedInAccount, @IzbirackoMesto, @IzbOpstina)", 
+                    "insert into tClenovi (Ime, Prezime, EMBG, BrClenskaKarta, DataRagjanje, Telefon1, Telefon2, eMail, Adresa, Hobi, RabotenStatusId, StepenObrId, RabotenStatusOpis, FbAccount, TwitterAccount, InstagramAccount, LinkedInAccount, IzbirackoMesto, IzbOpstina, SlavaId, NacionalnostId, Pol) " +
+                    "values (@Ime, @Prezime, @EMBG, @BrClenskaKarta, @DataRagjanje, @Telefon1, @Telefon2, @eMail, @Adresa, @Hobi, @RabotenStatusId, @StepenObrId, @RabotenStatusOpis, @FbAccount, @TwitterAccount, @InstagramAccount, @LinkedInAccount, @IzbirackoMesto, @IzbOpstina, @SlavaId, @NacionalnostId, @Pol)", 
                     par,
                     commandType: System.Data.CommandType.Text
                     );
@@ -145,14 +177,19 @@ namespace ClenoviSDSM.Server.Repositories
                 par.Add("@IzbOpstina", clen.IzbOpstina);
                 par.Add("@ObrazovnaInstitucija", clen.ObrazovnaInstitucija);
                 par.Add("@ObrNasoka", clen.ObrNasoka);
+                par.Add("@SlavaId", clen.SlavaId);
+                par.Add("@NacionalnostId", clen.NacionalnostId);
+                par.Add("@Pol", clen.Pol);
 
                 await conn.OpenAsync();
                 try
                 { 
                 var res = await conn.ExecuteAsync(
                     "update tClenovi set Ime = @Ime, Prezime = @Prezime, EMBG = @EMBG, BrClenskaKarta = @BrClenskaKarta, DataRagjanje = @DataRagjanje, Telefon1 = @Telefon1, " +
-                    "Telefon2 = @Telefon2, eMail = @eMail, Adresa = @Adresa, Hobi = @Hobi, RabotenStatusId = @RabotenStatusId, StepenObrId = @StepenObrId, RabotenStatusOpis = @RabotenStatusOpis, ObrazovnaInstitucija = @ObrazovnaInstitucija, ObrNasoka = @ObrNasoka, " +
-                    "FbAccount = @FbAccount, TwitterAccount = @TwitterAccount, InstagramAccount = @InstagramAccount, LinkedInAccount = @LinkedInAccount, IzbirackoMesto = @IzbirackoMesto, IzbOpstina = @IzbOpstina where Id = @Id",
+                    "Telefon2 = @Telefon2, eMail = @eMail, Adresa = @Adresa, Hobi = @Hobi, RabotenStatusId = @RabotenStatusId, StepenObrId = @StepenObrId, " +
+                    "RabotenStatusOpis = @RabotenStatusOpis, ObrazovnaInstitucija = @ObrazovnaInstitucija, ObrNasoka = @ObrNasoka, FbAccount = @FbAccount, " +
+                    "TwitterAccount = @TwitterAccount, InstagramAccount = @InstagramAccount, LinkedInAccount = @LinkedInAccount, IzbirackoMesto = @IzbirackoMesto, " +
+                    "IzbOpstina = @IzbOpstina, SlavaId = @SlavaId, NacionalnostId = @NacionalnostId, Pol = @Pol where Id = @Id",
                     par,
                     commandType: System.Data.CommandType.Text
                     );
