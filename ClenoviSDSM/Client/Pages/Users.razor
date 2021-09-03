@@ -46,9 +46,6 @@ else
                             <MudTooltip Text="Избриши">
                                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Primary" OnClick="@(() => DeleteKorisnik(@context.Id))" />
                             </MudTooltip>
-                            <MudTooltip Text="Промени лозинка">
-                                <MudIconButton Icon="@Icons.Material.Filled.LockOpen" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OpenCPDialog())" />
-                            </MudTooltip>
                         </MudTd>
                     </RowTemplate>
                     <RowEditingTemplate>
@@ -67,6 +64,11 @@ else
                                 <MudSelectItem Value="@("Editor")">Editor</MudSelectItem>
                                 <MudSelectItem Value="@("Viewer")">Viewer</MudSelectItem>
                             </MudSelect>
+                        </MudTd>
+                        <MudTd DataLabel="">
+                            <MudTooltip Text="Промени лозинка">
+                                <MudIconButton Icon="@Icons.Material.Filled.LockOpen" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OpenCPDialog())" />
+                            </MudTooltip>
                         </MudTd>
                     </RowEditingTemplate>
                 </MudTable>
@@ -155,7 +157,12 @@ else
     private void OpenDialog() => dialogVisible = true;
 
     private bool dialogCPVisible;
-    private void OpenCPDialog() => dialogCPVisible = true;
+    private void OpenCPDialog()
+    {
+        selectedKorisnik.Password = String.Empty;
+        selectedKorisnik.Password2 = String.Empty;
+        dialogCPVisible = true;
+    }
 
     protected override async Task OnInitializedAsync()
     {

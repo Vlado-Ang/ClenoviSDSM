@@ -18,7 +18,6 @@ namespace ClenoviSDSM.Shared.Models
         public string LastName { get; set; }
         [Required(ErrorMessage = "Ролјата е задолжителна")]
         public string RoleName { get; set; }
-        public bool IsDisabled { get; set; }
         public string RefreshToken { get; set; }
     }
 }

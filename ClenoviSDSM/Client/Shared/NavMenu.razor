@@ -1,8 +1,8 @@
 ﻿<MudNavMenu Class="mud-width-full">
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Почетна</MudNavLink>
+    <MudNavLink Href="/clenovi" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.PeopleAlt">Членови</MudNavLink>
     <AuthorizeView Roles="Admin,Editor">
         <Authorized>
-            <MudNavLink Href="/clenovi" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.PeopleAlt">Членови</MudNavLink>
             <MudNavGroup Title="Администрација" Icon="@Icons.Material.Filled.Settings" Expanded="false">
                 <MudNavLink Href="/rabstatusi" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Engineering">Работен статус</MudNavLink>
                 <MudNavLink Href="/stepeniobr" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.School">Образование</MudNavLink>

@@ -26,7 +26,7 @@ namespace ClenoviSDSM.Server.Repositories
                 try
                 {
                     res = await conn.QueryAsync<User>(
-                        "select * from tUsers where IsDisabled = false",
+                        "select * from tUsers",
                         commandType: System.Data.CommandType.Text
                         );
                 }
@@ -48,7 +48,7 @@ namespace ClenoviSDSM.Server.Repositories
                 par.Add("@Username", username);
 
                 User res = await conn.QueryFirstOrDefaultAsync<User>(
-                    "select * from tUsers where Username = @Username and IsDisabled = false",
+                    "select * from tUsers where Username = @Username",
                     par,
                     commandType: System.Data.CommandType.Text
                     );
@@ -67,14 +67,13 @@ namespace ClenoviSDSM.Server.Repositories
                 par.Add("@FirstName", user.FirstName);
                 par.Add("@LastName", user.LastName);
                 par.Add("@RoleName", user.RoleName);
-                par.Add("@IsDisabled", user.IsDisabled);
 
 
                 await conn.OpenAsync();
 
                 var res = await conn.ExecuteAsync(
-                    "INSERT INTO tUsers (Username, Password, FirstName, LastName, RoleName, IsDisabled) " +
-                    "VALUES (@Username, @Password, @FirstName, @LastName, @RoleName, @IsDisabled)",
+                    "INSERT INTO tUsers (Username, Password, FirstName, LastName, RoleName) " +
+                    "VALUES (@Username, @Password, @FirstName, @LastName, @RoleName)",
                     par,
                     commandType: System.Data.CommandType.Text
                     );
@@ -91,14 +90,13 @@ namespace ClenoviSDSM.Server.Repositories
                 par.Add("@FirstName", user.FirstName);
                 par.Add("@LastName", user.LastName);
                 par.Add("@RoleName", user.RoleName);
-                par.Add("@IsDisabled", user.IsDisabled);
 
 
                 await conn.OpenAsync();
 
                 var res = await conn.ExecuteAsync(
-                    "UPDATE tUsers SET  Username = @Username, FirstName = @FirstName, LastName = @LastName, RoleName = @RoleName, " +
-                    "IsDisabled = @IsDisabled WHERE Id = @Id",
+                    "UPDATE tUsers SET  Username = @Username, FirstName = @FirstName, LastName = @LastName, RoleName = @RoleName " +
+                    "WHERE Id = @Id",
                     par,
                     commandType: System.Data.CommandType.Text
                 );
@@ -118,7 +116,7 @@ namespace ClenoviSDSM.Server.Repositories
                 await conn.OpenAsync();
 
                 var res = await conn.ExecuteAsync(
-                    "UPDATE tUsers SET  Password = @Password, WHERE Id = @Id",
+                    "UPDATE tUsers SET  Password = @Password WHERE Id = @Id",
                     par,
                     commandType: System.Data.CommandType.Text
                 );
@@ -135,7 +133,7 @@ namespace ClenoviSDSM.Server.Repositories
                 try
                 {
                     var res = await conn.ExecuteAsync(
-                        "update tUsers set IsDisabled = true where Id = @Id",
+                        "delete from tUsers where Id = @Id",
                         par,
                         commandType: System.Data.CommandType.Text
                         );
