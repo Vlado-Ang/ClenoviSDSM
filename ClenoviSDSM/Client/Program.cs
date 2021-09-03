@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using ClenoviSDSM.Client.Auth;
 using ClenoviSDSM.Client.Services;
 using Blazored.LocalStorage;
+using Blazored.SessionStorage;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 
 namespace ClenoviSDSM.Client
@@ -55,6 +56,8 @@ namespace ClenoviSDSM.Client
             builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationProvider>();
           
             builder.Services.AddMudServices();
+            builder.Services.AddBlazoredLocalStorage();
+            builder.Services.AddBlazoredSessionStorage();
             builder.Services.AddBlazoredLocalStorage();
             builder.Services.AddScoped<IAcountService, AccountService>();
             builder.Services.AddScoped<ITokenManagerService, TokenManagerService>();

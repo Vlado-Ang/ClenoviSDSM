@@ -88,7 +88,6 @@ namespace ClenoviSDSM.Server.Repositories
                 DynamicParameters par = new DynamicParameters();
                 par.Add("@Id", user.Id);
                 par.Add("@Username", user.Username);
-                par.Add("@Password", user.Password);
                 par.Add("@FirstName", user.FirstName);
                 par.Add("@LastName", user.LastName);
                 par.Add("@RoleName", user.RoleName);
@@ -98,7 +97,7 @@ namespace ClenoviSDSM.Server.Repositories
                 await conn.OpenAsync();
 
                 var res = await conn.ExecuteAsync(
-                    "UPDATE tUsers SET  Username = @Username, Password = @Password, FirstName = @FirstName, LastName = @LastName, RoleName = @RoleName, " +
+                    "UPDATE tUsers SET  Username = @Username, FirstName = @FirstName, LastName = @LastName, RoleName = @RoleName, " +
                     "IsDisabled = @IsDisabled WHERE Id = @Id",
                     par,
                     commandType: System.Data.CommandType.Text

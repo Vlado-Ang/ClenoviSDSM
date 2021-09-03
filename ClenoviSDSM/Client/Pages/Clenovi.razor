@@ -3,6 +3,7 @@
 @using ClenoviSDSM.Shared.Models
 @using ClenoviSDSM.Client.Services
 @using ClenoviSDSM.Client.Auth
+@using Microsoft.Extensions.Logging
 
 @inject HttpClient Http
 @inject IDialogService DialogService
@@ -10,11 +11,13 @@
 @inject ITokenManagerService _tokenService
 @inject NavigationManager navMgr
 @inject AuthenticationStateProvider customProvider
+@inject ILogger<Clenovi> Logger
+@inject Blazored.SessionStorage.ISyncSessionStorageService ls
 
 @inject IExportExcelService excelService
 @inject IJSRuntime js
 
-@if (clenovi == null || stepeniObrazovanie == null || rabStatusi == null || opstini == null || slavi == null)
+@if (clenovi == null || rabStatusi == null || slavi == null || nacionalnosti == null)
 {
     <MudOverlay Visible="true" DarkBackground="true">
         <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
@@ -22,271 +25,157 @@
 }
 else
 {
-    <MudHidden IsHidden="@IsHiddenMain">
-        <MudOverlay Visible="@overlayVisible" DarkBackground="true">
-            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-        </MudOverlay>
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-16">
-            <MudText Typo="Typo.h4" GutterBottom="true">Листа на членови</MudText>
+<MudOverlay Visible="@overlayVisible" DarkBackground="true">
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+</MudOverlay>     
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-16">
+    <MudText Typo="Typo.h4" GutterBottom="true">Листа на членови</MudText>
 
-            <MudPaper Style="background-color: #e4e4e4" Class="pa-1" Elevation="2">
-                <MudExpansionPanels>
-                    <MudExpansionPanel>
-                        <TitleContent>
-                            <div class="d-flex">
-                                <MudIcon Icon="@Icons.Material.Filled.Search" class="mr-3"></MudIcon>
-                                <MudText><strong>Пребарување...</strong></MudText>
-                            </div>
-                        </TitleContent>
-                        <ChildContent>
-                            <MudGrid>
-                                <MudItem xs="12" sm="6" lg="3">
-                                    <MudTextField @bind-Value="@clFilter.Ime" Label="Име" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@searchRodendeni" />
-                                </MudItem>
-                                <MudItem xs="12" sm="6" lg="3">
-                                    <MudTextField @bind-Value="@clFilter.Prezime" Label="Презиме" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@searchRodendeni" />
-                                </MudItem>
-                                <MudItem xs="12" sm="6" lg="3">
-                                    <MudSelect T="string" @bind-Value="@clFilter.Pol" Label="Пол" ReadOnly="@IsReadOnly" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@searchRodendeni">
-                                        <MudSelectItem Value="@("Машки")">Машки</MudSelectItem>
-                                        <MudSelectItem Value="@("Женски")">Женски</MudSelectItem>
-                                        <MudSelectItem Value="@("(Непознато)")">(Непознато)</MudSelectItem>
-                                    </MudSelect>
-                                </MudItem>
-                                <MudItem xs="12" sm="6" lg="3">
-                                    <MudTextField @bind-Value="@clFilter.Telefon1" Label="Телефон" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@searchRodendeni" />
-                                </MudItem>
-                                <MudItem xs="12" sm="6" lg="4">
-                                    <MudDatePicker Editable="true" @bind-Date="@clFilter.DataRagjanjeDo" Label="Датум раѓање од" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@searchRodendeni" />
-                                </MudItem>
-                                <MudItem xs="12" sm="6" lg="4">
-                                    <MudDatePicker Editable="true" @bind-Date="@clFilter.DataRagjanjeOd" Label="Датум раѓање до" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@searchRodendeni" />
-                                </MudItem>
-                                <MudItem xs="12" sm="6" lg="4">
-                                    <MudSelect T="string" @bind-Value="@clFilter.OpisStatus" Variant="Variant.Outlined" Label="Работен статус" Margin="Margin.Dense" Disabled="@searchRodendeni">
-                                        @foreach (var rs in rabStatusi)
-                                        {
-                                            <MudSelectItem Value="@rs.OpisStatus">@rs.OpisStatus</MudSelectItem>
-                                        }
-                                    </MudSelect>
-                                </MudItem>
-                                <MudItem xs="12" sm="6" lg="4">
-                                    <MudTextField @bind-Value="@clFilter.RabotenStatusOpis" Label="Работодавач" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@searchRodendeni" />
-                                </MudItem>
-                                <MudItem xs="12" sm="6" lg="4">
-                                    <MudTextField @bind-Value="@clFilter.ObrazovnaInstitucija" Label="Образовна институција" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@searchRodendeni" />
-                                </MudItem>
-                                <MudItem xs="12" sm="6" lg="4">
-                                    <MudTextField @bind-Value="@clFilter.IzbirackoMesto" Label="Избирачко место" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@searchRodendeni" />
-                                </MudItem>
-                                <MudItem xs="12" sm="6" lg="4">
-                                    <MudSelect T="string" @bind-Value="@clFilter.NacOpis" Variant="Variant.Outlined" Label="Националност" Margin="Margin.Dense" Disabled="@searchRodendeni">
-                                        @foreach (var rs in nacionalnosti)
-                                        {
-                                            <MudSelectItem Value="@rs.NacOpis">@rs.NacOpis</MudSelectItem>
-                                        }
-                                    </MudSelect>
-                                </MudItem>
-                                <MudItem xs="12" sm="6" lg="4">
-                                    <MudSelect T="string" @bind-Value="@clFilter.SlavaOpis" Variant="Variant.Outlined" Label="Куќна слава" Margin="Margin.Dense" Disabled="@searchRodendeni">
-                                        @foreach (var rs in slavi)
-                                        {
-                                            <MudSelectItem Value="@rs.SlavaOpis">@rs.SlavaOpis</MudSelectItem>
-                                        }
-                                    </MudSelect>
-                                </MudItem>
-                                <MudItem xs="12" sm="6" lg="4" Class="d-inline-flex">
-                                    <MudSwitch @bind-Checked="@searchRodendeni" Color="Color.Primary" Label="Родендени" />
-                                    <MudSlider @bind-Value="@rodendeni" Disabled="@(searchRodendeni == true ? false : true)" Min="0" Max="14" Step="1">денес и следните @rodendeni.ToString() денови</MudSlider>
-                                </MudItem>
-                                <MudItem xs="12" Class="d-inline-flex justify-end">
-                                    <MudButton Color="Color.Warning" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.ClearAll" OnClick="Clear" Class="ma-1">Исчисти</MudButton>
-                                    <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Search" OnClick="Search" Class="ma-1">Пребарај</MudButton>
-                                </MudItem>
-                            </MudGrid>
-                        </ChildContent>
-                    </MudExpansionPanel>
-                </MudExpansionPanels>
-            </MudPaper>
+    <MudPaper Style="background-color: #e4e4e4" Class="pa-1" Elevation="2">
+        <MudExpansionPanels>
+            <MudExpansionPanel>
+                <TitleContent>
+                    <div class="d-flex">
+                        <MudIcon Icon="@Icons.Material.Filled.Search" class="mr-3"></MudIcon>
+                        <MudText><strong>Пребарување...</strong></MudText>
+                    </div>
+                </TitleContent>
+                <ChildContent>
+                    <MudGrid>
+                        <MudItem xs="12" sm="6" lg="3">
+                            <MudTextField @bind-Value="@clFilter.Ime" Label="Име" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@searchRodendeni" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6" lg="3">
+                            <MudTextField @bind-Value="@clFilter.Prezime" Label="Презиме" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@searchRodendeni" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6" lg="3">
+                            <MudSelect T="string" @bind-Value="@clFilter.Pol" Label="Пол" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@searchRodendeni">
+                                <MudSelectItem Value="@("Машки")">Машки</MudSelectItem>
+                                <MudSelectItem Value="@("Женски")">Женски</MudSelectItem>
+                                <MudSelectItem Value="@("(Непознато)")">(Непознато)</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" sm="6" lg="3">
+                            <MudTextField @bind-Value="@clFilter.Telefon1" Label="Телефон" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@searchRodendeni" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6" lg="4">
+                            <MudDatePicker Editable="true" @bind-Date="@clFilter.DataRagjanjeDo" Label="Датум раѓање од" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@searchRodendeni" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6" lg="4">
+                            <MudDatePicker Editable="true" @bind-Date="@clFilter.DataRagjanjeOd" Label="Датум раѓање до" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@searchRodendeni" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6" lg="4">
+                            <MudSelect T="string" @bind-Value="@clFilter.OpisStatus" Variant="Variant.Outlined" Label="Работен статус" Margin="Margin.Dense" Disabled="@searchRodendeni">
+                                @foreach (var rs in rabStatusi)
+                                {
+                                    <MudSelectItem Value="@rs.OpisStatus">@rs.OpisStatus</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" sm="6" lg="4">
+                            <MudTextField @bind-Value="@clFilter.RabotenStatusOpis" Label="Работодавач" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@searchRodendeni" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6" lg="4">
+                            <MudTextField @bind-Value="@clFilter.ObrazovnaInstitucija" Label="Образовна институција" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@searchRodendeni" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6" lg="4">
+                            <MudTextField @bind-Value="@clFilter.IzbirackoMesto" Label="Избирачко место" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@searchRodendeni" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6" lg="4">
+                            <MudSelect T="string" @bind-Value="@clFilter.NacOpis" Variant="Variant.Outlined" Label="Националност" Margin="Margin.Dense" Disabled="@searchRodendeni">
+                                @foreach (var rs in nacionalnosti)
+                                {
+                                    <MudSelectItem Value="@rs.NacOpis">@rs.NacOpis</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" sm="6" lg="4">
+                            <MudSelect T="string" @bind-Value="@clFilter.SlavaOpis" Variant="Variant.Outlined" Label="Куќна слава" Margin="Margin.Dense" Disabled="@searchRodendeni">
+                                @foreach (var rs in slavi)
+                                {
+                                    <MudSelectItem Value="@rs.SlavaOpis">@rs.SlavaOpis</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" sm="6" lg="4" Class="d-inline-flex">
+                            <MudSwitch @bind-Checked="@searchRodendeni" Color="Color.Primary" Label="Родендени" />
+                            <MudSlider @bind-Value="@rodendeni" Disabled="@(searchRodendeni == true ? false : true)" Min="0" Max="14" Step="1">денес и следните @rodendeni.ToString() денови</MudSlider>
+                        </MudItem>
+                        <MudItem xs="12" Class="d-inline-flex justify-end">
+                            <MudButton Color="Color.Warning" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.ClearAll" OnClick="Clear" Class="ma-1">Исчисти</MudButton>
+                            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Search" OnClick="Search" Class="ma-1">Пребарај</MudButton>
+                        </MudItem>
+                    </MudGrid>
+                </ChildContent>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+    </MudPaper>
 
-            <MudDivider DividerType="DividerType.Middle" Class="my-6" />
+    <MudDivider DividerType="DividerType.Middle" Class="my-6" />
 
 
-            <MudTable @ref="clenoviTable" Items="@clenovi" Hover="true" Dense="true" Striped="true" SortLabel="Сорт по" Elevation="0" CurrentPage="@currPage">
-                <ToolBarContent>
-                    <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Custom.FileFormats.FileExcel" OnClick="DownloadExcelFile" Class="ma-1">Excel експорт</MudButton>
-                    <MudSpacer />
-                    <AuthorizeView Roles="Admin">
-                        <Authorized>
-                            <MudContainer Class="d-flex justify-end" MaxWidth="MaxWidth.ExtraLarge">
-                                <MudTooltip Text="Нов член">
-                                    <MudFab OnClick="@((e) => NewClen())" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Medium" IconSize="Size.Medium" Class="ma-2" />
-                                </MudTooltip>
-                            </MudContainer>
-                        </Authorized>
-                    </AuthorizeView>
-                </ToolBarContent>
-                <ColGroup>
-                    <col />
-                    <col />
-                    <col />
-                    <col />
-                    <col />
-                    <col style="width:150px;" />
-                </ColGroup>
-                <HeaderContent>
-                    <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Clen, object>(x => x.Ime)">Име</MudTableSortLabel></MudTh>
-                    <MudTh><MudTableSortLabel SortBy="new Func<Clen, object>(x => x.Prezime)">Презиме</MudTableSortLabel></MudTh>
-                    <MudTh><MudTableSortLabel SortBy="new Func<Clen, object>(x => x.DataRagjanje)">Дата на раѓање</MudTableSortLabel></MudTh>
-                    <MudTh><MudTableSortLabel SortBy="new Func<Clen, object>(x => x.OpisStatus)">Работен статус</MudTableSortLabel></MudTh>
-                    <MudTh><MudTableSortLabel SortBy="new Func<Clen, object>(x => x.ObrazovnaInstitucija)">Образовна институција</MudTableSortLabel></MudTh>
-
-                    <MudTh>Акции</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Име">@context.Ime</MudTd>
-                    <MudTd DataLabel="Презиме">@context.Prezime</MudTd>
-                    <MudTd DataLabel="Дата на раѓање">@string.Format("{0:dd.MM.yyyy}", context.DataRagjanje)</MudTd>
-                    <MudTd DataLabel="Работен статус">@context.OpisStatus</MudTd>
-                    <MudTd DataLabel="Образовна институција">@context.ObrazovnaInstitucija</MudTd>
-                    <MudTd DataLabel="">
-                        <AuthorizeView Roles="Admin,Editor">
-                            <Authorized Context="aut">
-                                <MudTooltip Text="Измени">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Info" OnClick="@(() => EditClen(@context.Id, false))" />
-                                </MudTooltip>
-                            </Authorized>
-                        </AuthorizeView>
-                        <AuthorizeView Roles="Admin">
-                            <Authorized Context="aut">
-                                <MudTooltip Text="Избриши">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Primary" OnClick="@(() => DeleteClen(@context.Id))" />
-                                </MudTooltip>
-                            </Authorized>
-                        </AuthorizeView>
-                        <MudTooltip Text="Види детали">
-                            <MudIconButton Icon="@Icons.Material.Filled.Article" Size="Size.Small" Color="Color.Success" OnClick="@(() => EditClen(@context.Id, true))" />
+    <MudTable @ref="clenoviTable" Items="@clenovi" Hover="true" Dense="true" Striped="true" SortLabel="Сорт по" Elevation="0">
+        <ToolBarContent>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Custom.FileFormats.FileExcel" OnClick="DownloadExcelFile" Class="ma-1">Excel експорт</MudButton>
+            <MudSpacer />
+            <AuthorizeView Roles="Admin">
+                <Authorized>
+                    <MudContainer Class="d-flex justify-end" MaxWidth="MaxWidth.ExtraLarge">
+                        <MudTooltip Text="Нов член">
+                            <MudFab OnClick="@((e) => NewClen())" Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Medium" IconSize="Size.Medium" Class="ma-2" />
                         </MudTooltip>
-                    </MudTd>
-                </RowTemplate>
-                <PagerContent>
-                    <MudTablePager InfoFormat="Прикажани {first_item}-{last_item} од {all_items}" PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" RowsPerPageString="Редови по страна" HorizontalAlignment="HorizontalAlignment.Center" />
-                </PagerContent>
-            </MudTable>
-        </MudContainer>
-    </MudHidden>
-    <MudHidden IsHidden="@IsHiddenDialog">
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-16">
-            <MudText Typo="Typo.h6">
-                <MudIcon Icon="@TitleIcon" Class="mr-3 mb-n1" />
-                @TitleText
-            </MudText>
-            <EditForm Model="@clen" OnValidSubmit="ValidSubmit">
-                <DataAnnotationsValidator />
-                <MudGrid>
-                    <MudItem xs="12" sm="6" lg="3">
-                        <MudTextField @bind-Value="@clen.Ime" Label="Име" For="@(() => clen.Ime)" Variant="Variant.Outlined" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" lg="3">
-                        <MudTextField @bind-Value="@clen.Prezime" Label="Презиме" For="@(() => clen.Prezime)" Variant="Variant.Outlined" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" lg="3">
-                        <MudTextField @bind-Value="@clen.EMBG" Label="ЕМБГ" For="@(() => clen.EMBG)" Variant="Variant.Outlined" Immediate="true" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" lg="3">
-                        <MudSelect T="string" @bind-Value="@clen.Pol" For="@(() => clen.Pol)" Label="Пол" ReadOnly="@IsReadOnly" Variant="Variant.Outlined" Margin="Margin.Dense">
-                            <MudSelectItem Value="@("Машки")">Машки</MudSelectItem>
-                            <MudSelectItem Value="@("Женски")">Женски</MudSelectItem>
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem xs="12" sm="6" lg="3">
-                        <MudTextField @bind-Value="@clen.BrClenskaKarta" Label="Бр. на членска карта" For="@(() => clen.BrClenskaKarta)" Variant="Variant.Outlined" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" lg="3">
-                        <MudDatePicker Editable="true" @bind-Date="@clen.DataRagjanje" Label="Датум на раѓање" AllowKeyboardInput="true" Variant="Variant.Outlined" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" lg="3">
-                        <MudSelect T="int?" @bind-Value="@clen.NacionalnostId" Variant="Variant.Outlined" Label="Националност" ReadOnly="@IsReadOnly" Margin="Margin.Dense">
-                            @foreach (var so in nacionalnosti)
-                            {
-                                <MudSelectItem Value="@so.Id">@so.NacOpis</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem xs="12" sm="6" lg="3">
-                        <MudTextField @bind-Value="@clen.Telefon1" Label="Телефон 1" For="@(() => clen.Telefon1)" Variant="Variant.Outlined" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" lg="4">
-                        <MudSelect T="int?" @bind-Value="@clen.StepenObrId" Variant="Variant.Outlined" Label="Степен на образование" ReadOnly="@IsReadOnly" Margin="Margin.Dense">
-                            @foreach (var so in stepeniObrazovanie)
-                            {
-                                <MudSelectItem Value="@so.Id">@so.StepenObrOpis</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem xs="12" sm="6" lg="4">
-                        <MudTextField @bind-Value="@clen.Email" Label="e-Mail" For="@(() => clen.Email)" Variant="Variant.Outlined" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" lg="4">
-                        <MudTextField @bind-Value="@clen.Telefon2" Label="Телефон 2" For="@(() => clen.Telefon2)" Variant="Variant.Outlined" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="@clen.ObrazovnaInstitucija" Label="Образовна институција" For="@(() => clen.ObrazovnaInstitucija)" Variant="Variant.Outlined" Lines="3" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="@clen.ObrNasoka" Label="Насока" For="@(() => clen.ObrNasoka)" Variant="Variant.Outlined" Lines="3" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" lg="4">
-                        <MudSelect T="int?" @bind-Value="@clen.RabotenStatusId" Variant="Variant.Outlined" Label="Работен статус" ReadOnly="@IsReadOnly" Margin="Margin.Dense">
-                            @foreach (var rs in rabStatusi)
-                            {
-                                <MudSelectItem Value="@rs.Id">@rs.OpisStatus</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem xs="12" sm="6" lg="4">
-                        <MudTextField @bind-Value="@clen.Adresa" Label="Адреса" For="@(() => clen.Adresa)" Variant="Variant.Outlined" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" lg="4">
-                        <MudSelect T="int?" @bind-Value="@clen.SlavaId" Variant="Variant.Outlined" Label="Куќна слава" ReadOnly="@IsReadOnly" Margin="Margin.Dense">
-                            @foreach (var rs in slavi)
-                            {
-                                <MudSelectItem Value="@rs.Id">@rs.SlavaOpis</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="@clen.RabotenStatusOpis" Label="Работодавач" For="@(() => clen.RabotenStatusOpis)" Variant="Variant.Outlined" Lines=3 ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="@clen.Hobi" Label="Хоби и интереси" For="@(() => clen.Hobi)" Variant="Variant.Outlined" Lines="3" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" lg="4">
-                        <MudTextField @bind-Value="@clen.IzbirackoMesto" Label="Избирачко место" For="@(() => clen.IzbirackoMesto)" Variant="Variant.Outlined" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" lg="4">
-                        <MudAutocomplete T="string" Label="Општина" @bind-Value="@clen.IzbOpstina" ReadOnly="@IsReadOnly" ResetValueOnEmptyText="true" CoerceText="true" SearchFunc="@SearchOpstini" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" lg="4">
-                        <MudTextField @bind-Value="@clen.FbAccount" Label="Facebook сметка" For="@(() => clen.FbAccount)" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Custom.Brands.Facebook" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" lg="4">
-                        <MudTextField @bind-Value="@clen.TwitterAccount" Label="Twitter сметка" For="@(() => clen.TwitterAccount)" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Custom.Brands.Twitter" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" lg="4">
-                        <MudTextField @bind-Value="@clen.InstagramAccount" Label="Instagram сметка" For="@(() => clen.InstagramAccount)" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Custom.Brands.Instagram" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6" lg="4">
-                        <MudTextField @bind-Value="@clen.LinkedInAccount" Label="LinkedIn сметка" For="@(() => clen.LinkedInAccount)" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Custom.Brands.LinkedIn" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
-                    </MudItem>
-                    <MudItem xs="12" Class="d-inline-flex justify-end">
-                        <MudButton OnClick="Cancel">@CancelButtonText</MudButton>
-                        <MudButton Color="Color.Primary" ButtonType="ButtonType.Submit" Disabled="@IsReadOnly">@OKButtonText</MudButton>
-                    </MudItem>
-                </MudGrid>
-            </EditForm>
-        </MudContainer>
-    </MudHidden>
+                    </MudContainer>
+                </Authorized>
+            </AuthorizeView>
+        </ToolBarContent>
+        <ColGroup>
+            <col />
+            <col />
+            <col />
+            <col />
+            <col />
+            <col style="width:150px;" />
+        </ColGroup>
+        <HeaderContent>
+            <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Clen, object>(x => x.Ime)">Име</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Clen, object>(x => x.Prezime)">Презиме</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Clen, object>(x => x.DataRagjanje)">Дата на раѓање</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Clen, object>(x => x.OpisStatus)">Работен статус</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Clen, object>(x => x.ObrazovnaInstitucija)">Образовна институција</MudTableSortLabel></MudTh>
+
+            <MudTh>Акции</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Име">@context.Ime</MudTd>
+            <MudTd DataLabel="Презиме">@context.Prezime</MudTd>
+            <MudTd DataLabel="Дата на раѓање">@string.Format("{0:dd.MM.yyyy}", context.DataRagjanje)</MudTd>
+            <MudTd DataLabel="Работен статус">@context.OpisStatus</MudTd>
+            <MudTd DataLabel="Образовна институција">@context.ObrazovnaInstitucija</MudTd>
+            <MudTd DataLabel="">
+                <AuthorizeView Roles="Admin,Editor">
+                    <Authorized Context="aut">
+                        <MudTooltip Text="Измени">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Info" OnClick="@(() => EditClen(@context.Id, false))" />
+                        </MudTooltip>
+                    </Authorized>
+                </AuthorizeView>
+                <AuthorizeView Roles="Admin">
+                    <Authorized Context="aut">
+                        <MudTooltip Text="Избриши">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Primary" OnClick="@(() => DeleteClen(@context.Id))" />
+                        </MudTooltip>
+                    </Authorized>
+                </AuthorizeView>
+                <MudTooltip Text="Види детали">
+                    <MudIconButton Icon="@Icons.Material.Filled.Article" Size="Size.Small" Color="Color.Success" OnClick="@(() => EditClen(@context.Id, true))" />
+                </MudTooltip>
+            </MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager InfoFormat="Прикажани {first_item}-{last_item} од {all_items}" PageSizeOptions="new int[] { 5, 10, 20, 50, 100 }" RowsPerPageString="Редови по страна" HorizontalAlignment="HorizontalAlignment.Center" />
+        </PagerContent>
+    </MudTable>
+</MudContainer>   
 }
 
 
@@ -301,51 +190,61 @@ else
     private IEnumerable<ClenExcel> clenoviExcel;
 
     private IEnumerable<RabotenStatus> rabStatusi;
-    private IEnumerable<StepenObrazovanie> stepeniObrazovanie;
     private IEnumerable<Slava> slavi;
     private IEnumerable<Nacionalnost> nacionalnosti;
     private IEnumerable<string> opstini;
     private MudTable<Clen> clenoviTable;
     private int tmpPage;
-    private int currPage;
-
-    public string TitleIcon { get; set; }
-    public string TitleText { get; set; }
-    public string CancelButtonText { get; set; }
-    public string OKButtonText { get; set; }
-    public string InsertUpdate { get; set; }
-    public bool IsReadOnly { get; set; }
-    public bool IsHiddenMain { get; set; }
-    public bool IsHiddenDialog { get; set; }
 
     private Clen clen = new Clen();
 
     private ClenoviFilter clFilter = new ClenoviFilter();
 
+    private void PutToLocalStorage()
+    {
+        if (clFilter != null)
+            ls.SetItem<ClenoviFilter>("clFilter", clFilter);
+        if (clenoviTable != null)
+            ls.SetItem<int>("currPage", clenoviTable.CurrentPage);
+    }
+
+    private void GetFromLocalStorage()
+    {
+        if(ls.ContainKey("clFilter"))
+            clFilter = ls.GetItem<ClenoviFilter>("clFilter");
+        if (ls.ContainKey("currPage"))
+            tmpPage = ls.GetItem<int>("currPage");
+        else
+            tmpPage = 0;
+    }
+
     protected override void OnAfterRender(bool firstRender)
     {
         if (!firstRender)
-            clenoviTable.CurrentPage = tmpPage;
+            clenoviTable.NavigateTo(tmpPage);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
-            clenoviTable.CurrentPage = tmpPage;
+            clenoviTable.NavigateTo(tmpPage);
+    }
+
+
+    protected override void OnInitialized()
+    {
+        GetFromLocalStorage();
     }
 
     protected override async Task OnInitializedAsync()
     {
         rodendeni = 0;
-
+        //GetFromLocalStorage();
         await GetAllClenovi();
         await GetRabotniStatusi();
-        await GetStepeniObrazovanie();
         await GetSlavi();
         await GetNacionalnosti();
-        await GetOpstini();
-        IsHiddenMain = false;
-        IsHiddenDialog = true;
+
         StateHasChanged();
     }
 
@@ -443,28 +342,6 @@ else
         }
     }
 
-    private async Task GetStepeniObrazovanie()
-    {
-        string token = await _tokenService.GetTokenAsync();
-        Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
-        var res = await Http.GetAsync("api/GetStepeniObrazovanie");
-        if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-        {
-            (customProvider as CustomAuthenticationProvider).Notify();
-            navMgr.NavigateTo("/");
-        }
-        else if (res.IsSuccessStatusCode)
-        {
-            stepeniObrazovanie = await res.Content.ReadFromJsonAsync<IEnumerable<StepenObrazovanie>>();
-        }
-        else
-        {
-            Snackbar.Configuration.SnackbarVariant = Variant.Filled;
-            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
-            Snackbar.Add("Се случи грешка при читање на степени на образование", Severity.Error);
-        }
-    }
-
     private async Task GetSlavi()
     {
         string token = await _tokenService.GetTokenAsync();
@@ -509,85 +386,19 @@ else
         }
     }
 
-    private async Task GetOpstini()
-    {
-        string token = await _tokenService.GetTokenAsync();
-        Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
-        var res = await Http.GetAsync("api/GetOpstini");
-        if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-        {
-            (customProvider as CustomAuthenticationProvider).Notify();
-            navMgr.NavigateTo("/");
-        }
-        else if (res.IsSuccessStatusCode)
-        {
-            opstini = await res.Content.ReadFromJsonAsync<IEnumerable<string>>();
-        }
-        else
-        {
-            Snackbar.Configuration.SnackbarVariant = Variant.Filled;
-            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
-            Snackbar.Add("Се случи грешка при читање на националностите", Severity.Error);
-        }
-    }
-
-    async Task ValidSubmit(EditContext editContext)
-    {
-        string token = await _tokenService.GetTokenAsync();
-        Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
-        HttpResponseMessage res;
-        if (InsertUpdate == "insert")
-        {
-            res = await Http.PostAsJsonAsync("api/InsertClen", clen);
-        }
-        else
-        {
-            res = await Http.PostAsJsonAsync("api/UpdateClen", clen);
-        }
-        if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-        {
-            (customProvider as CustomAuthenticationProvider).Notify();
-            navMgr.NavigateTo("/");
-        }
-        else if (res.IsSuccessStatusCode)
-        {
-            Snackbar.Configuration.SnackbarVariant = Variant.Filled;
-            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
-            if (InsertUpdate == "insert")
-                Snackbar.Add("Успешно внесен член", Severity.Success);
-            else
-                Snackbar.Add("Успешно ажуриран член", Severity.Success);
-
-            await GetAllClenovi();
-        }
-        else
-        {
-            Snackbar.Configuration.SnackbarVariant = Variant.Filled;
-            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
-            Snackbar.Add("Се случи грешка при запишување на членот", Severity.Error);
-        }
-        IsHiddenMain = false;
-        IsHiddenDialog = true;
-    }
-
-    private async Task<IEnumerable<string>> SearchOpstini(string value)
-    {
-        if (string.IsNullOrEmpty(value))
-            return opstini;
-        return opstini.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
-    }
-
-    private async Task Clear()
+    private void Clear()
     {
         clFilter = new ClenoviFilter();
         clenovi = clenoviTmp;
         rodendeni = 0;
         searchRodendeni = false;
+        PutToLocalStorage();
         StateHasChanged();
     }
 
     private async Task Search()
     {
+        PutToLocalStorage();
         if (!searchRodendeni)
         {
             clenovi = clenoviTmp;
@@ -684,6 +495,7 @@ else
 
     void SearchExcel()
     {
+        PutToLocalStorage();
         if (clFilter.Ime != null && clFilter.Ime != "-")
         {
             clenoviExcel = clenoviExcel.Where(x => x.Ime.ToUpper().Contains(clFilter.Ime.ToUpper()));
@@ -770,63 +582,21 @@ else
         };
     }
 
-    private void Cancel()
-    {
-        IsHiddenMain = false;
-        IsHiddenDialog = true;
-        StateHasChanged();
-    }
-
     private void NewClen()
     {
-        tmpPage = clenoviTable.CurrentPage;
-        clen = new Clen();
-
-        this.TitleIcon = Icons.Material.Filled.PersonAdd;
-        this.TitleText = "Нов член";
-        this.CancelButtonText = "Откажи";
-        this.OKButtonText = "Внеси член";
-        this.InsertUpdate = "insert";
-        IsHiddenMain = true;
-        IsHiddenDialog = false;
-        StateHasChanged();
+        PutToLocalStorage();
+        navMgr.NavigateTo("/newclen");
     }
 
-    private async Task EditClen(int Id, bool ro)
+    private void EditClen(int Id, bool ro)
     {
-        tmpPage = clenoviTable.CurrentPage;
-        this.IsReadOnly = ro;
-        string token = await _tokenService.GetTokenAsync();
-        Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
-        var res = await Http.GetAsync("api/GetClen/" + Id);
-
-        if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-        {
-            (customProvider as CustomAuthenticationProvider).Notify();
-            navMgr.NavigateTo("/");
-        }
-        else if (res.IsSuccessStatusCode)
-        {
-            clen = await res.Content.ReadFromJsonAsync<Clen>();
-            this.TitleIcon = Icons.Material.Filled.Person;
-            if (ro)
-                this.TitleText = "Детали за член";
-            else
-                this.TitleText = "Измени член";
-
-            this.CancelButtonText = "Откажи";
-            this.OKButtonText = "Измени член";
-            this.InsertUpdate = "update";
-            IsHiddenMain = true;
-            IsHiddenDialog = false;
-            StateHasChanged();
-        }
+        PutToLocalStorage();
+        string isRO;
+        if (ro)
+            isRO = "ro";
         else
-        {
-            Snackbar.Configuration.SnackbarVariant = Variant.Filled;
-            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
-            Snackbar.Add("Се случи грешка при читање на член", Severity.Error);
-        }
+            isRO = "rw";
+        navMgr.NavigateTo($"/editclen/{Id}/{isRO}");
     }
 
     private async Task DeleteClen(int Id)

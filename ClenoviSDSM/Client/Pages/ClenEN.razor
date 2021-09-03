@@ -1,0 +1,375 @@
+﻿@page "/editclen/{id:int}/{isRO}"
+@page "/newclen"
+
+@using ClenoviSDSM.Shared.Models
+@using ClenoviSDSM.Client.Services
+@using ClenoviSDSM.Client.Auth
+
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject ITokenManagerService _tokenService
+@inject NavigationManager navMgr
+@inject AuthenticationStateProvider customProvider
+
+@if (stepeniObrazovanie == null || rabStatusi == null || opstini == null || slavi == null || nacionalnosti == null)
+{
+    <MudOverlay Visible="true" DarkBackground="true">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    </MudOverlay>
+}
+else
+{
+    <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-16">
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@TitleIcon" Class="mr-3 mb-n1" />
+            @TitleText
+        </MudText>
+        <EditForm Model="@clen" OnValidSubmit="ValidSubmit">
+            <DataAnnotationsValidator />
+            <MudGrid>
+                <MudItem xs="12" sm="6" lg="3">
+                    <MudTextField @bind-Value="@clen.Ime" Label="Име" For="@(() => clen.Ime)" Variant="Variant.Outlined" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="3">
+                    <MudTextField @bind-Value="@clen.Prezime" Label="Презиме" For="@(() => clen.Prezime)" Variant="Variant.Outlined" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="3">
+                    <MudTextField @bind-Value="@clen.EMBG" Label="ЕМБГ" For="@(() => clen.EMBG)" Variant="Variant.Outlined" Immediate="true" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="3">
+                    <MudSelect T="string" @bind-Value="@clen.Pol" For="@(() => clen.Pol)" Label="Пол" ReadOnly="@IsReadOnly" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        <MudSelectItem Value="@("Машки")">Машки</MudSelectItem>
+                        <MudSelectItem Value="@("Женски")">Женски</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="3">
+                    <MudTextField @bind-Value="@clen.BrClenskaKarta" Label="Бр. на членска карта" For="@(() => clen.BrClenskaKarta)" Variant="Variant.Outlined" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="3">
+                    <MudDatePicker Editable="true" @bind-Date="@clen.DataRagjanje" Label="Датум на раѓање" AllowKeyboardInput="true" Variant="Variant.Outlined" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="3">
+                    <MudSelect T="int?" @bind-Value="@clen.NacionalnostId" Variant="Variant.Outlined" Label="Националност" ReadOnly="@IsReadOnly" Margin="Margin.Dense">
+                        @foreach (var so in nacionalnosti)
+                        {
+                            <MudSelectItem Value="@so.Id">@so.NacOpis</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="3">
+                    <MudTextField @bind-Value="@clen.Telefon1" Label="Телефон 1" For="@(() => clen.Telefon1)" Variant="Variant.Outlined" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="4">
+                    <MudSelect T="int?" @bind-Value="@clen.StepenObrId" Variant="Variant.Outlined" Label="Степен на образование" ReadOnly="@IsReadOnly" Margin="Margin.Dense">
+                        @foreach (var so in stepeniObrazovanie)
+                        {
+                            <MudSelectItem Value="@so.Id">@so.StepenObrOpis</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="4">
+                    <MudTextField @bind-Value="@clen.Email" Label="e-Mail" For="@(() => clen.Email)" Variant="Variant.Outlined" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="4">
+                    <MudTextField @bind-Value="@clen.Telefon2" Label="Телефон 2" For="@(() => clen.Telefon2)" Variant="Variant.Outlined" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="@clen.ObrazovnaInstitucija" Label="Образовна институција" For="@(() => clen.ObrazovnaInstitucija)" Variant="Variant.Outlined" Lines="3" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="@clen.ObrNasoka" Label="Насока" For="@(() => clen.ObrNasoka)" Variant="Variant.Outlined" Lines="3" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="4">
+                    <MudSelect T="int?" @bind-Value="@clen.RabotenStatusId" Variant="Variant.Outlined" Label="Работен статус" ReadOnly="@IsReadOnly" Margin="Margin.Dense">
+                        @foreach (var rs in rabStatusi)
+                        {
+                            <MudSelectItem Value="@rs.Id">@rs.OpisStatus</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="4">
+                    <MudTextField @bind-Value="@clen.Adresa" Label="Адреса" For="@(() => clen.Adresa)" Variant="Variant.Outlined" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="4">
+                    <MudSelect T="int?" @bind-Value="@clen.SlavaId" Variant="Variant.Outlined" Label="Куќна слава" ReadOnly="@IsReadOnly" Margin="Margin.Dense">
+                        @foreach (var rs in slavi)
+                        {
+                            <MudSelectItem Value="@rs.Id">@rs.SlavaOpis</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="@clen.RabotenStatusOpis" Label="Работодавач" For="@(() => clen.RabotenStatusOpis)" Variant="Variant.Outlined" Lines=3 ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="@clen.Hobi" Label="Хоби и интереси" For="@(() => clen.Hobi)" Variant="Variant.Outlined" Lines="3" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="4">
+                    <MudTextField @bind-Value="@clen.IzbirackoMesto" Label="Избирачко место" For="@(() => clen.IzbirackoMesto)" Variant="Variant.Outlined" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="4">
+                    <MudAutocomplete T="string" Label="Општина" @bind-Value="@clen.IzbOpstina" ReadOnly="@IsReadOnly" ResetValueOnEmptyText="true" CoerceText="true" SearchFunc="@SearchOpstini" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="4">
+                    <MudTextField @bind-Value="@clen.FbAccount" Label="Facebook сметка" For="@(() => clen.FbAccount)" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Custom.Brands.Facebook" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="4">
+                    <MudTextField @bind-Value="@clen.TwitterAccount" Label="Twitter сметка" For="@(() => clen.TwitterAccount)" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Custom.Brands.Twitter" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="4">
+                    <MudTextField @bind-Value="@clen.InstagramAccount" Label="Instagram сметка" For="@(() => clen.InstagramAccount)" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Custom.Brands.Instagram" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" sm="6" lg="4">
+                    <MudTextField @bind-Value="@clen.LinkedInAccount" Label="LinkedIn сметка" For="@(() => clen.LinkedInAccount)" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Custom.Brands.LinkedIn" ReadOnly="@IsReadOnly" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12" Class="d-inline-flex justify-end">
+                    <MudButton OnClick="Cancel">@CancelButtonText</MudButton>
+                    <MudButton Color="Color.Primary" ButtonType="ButtonType.Submit" Disabled="@IsReadOnly">@OKButtonText</MudButton>
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </MudContainer>
+}
+
+    @code {
+        [Parameter] public int? id { get; set; }
+        [Parameter] public string isRO { get; set; }
+
+        private IEnumerable<RabotenStatus> rabStatusi;
+        private IEnumerable<StepenObrazovanie> stepeniObrazovanie;
+        private IEnumerable<Slava> slavi;
+        private IEnumerable<Nacionalnost> nacionalnosti;
+        private IEnumerable<string> opstini;
+
+        public string TitleIcon { get; set; }
+        public string TitleText { get; set; }
+        public string CancelButtonText { get; set; }
+        public string OKButtonText { get; set; }
+        public string InsertUpdate { get; set; }
+        public bool IsReadOnly { get; set; }
+
+        private Clen clen = new Clen();
+
+        protected override async Task OnInitializedAsync()
+        {
+            if (id == null)
+            {
+
+                this.TitleIcon = Icons.Material.Filled.PersonAdd;
+                this.TitleText = "Нов член";
+                this.CancelButtonText = "Откажи";
+                this.OKButtonText = "Внеси член";
+                this.InsertUpdate = "insert";
+                this.IsReadOnly = false;
+            }
+            else
+            {
+                this.TitleIcon = Icons.Material.Filled.Person;
+                this.CancelButtonText = "Откажи";
+                this.OKButtonText = "Измени член";
+                this.InsertUpdate = "update";
+
+                if (isRO == "ro")
+                {
+                    this.TitleText = "Детали за член";
+                    this.IsReadOnly = true;
+                }
+                else
+                {
+                    this.TitleText = "Измени член";
+                    this.IsReadOnly = false;
+                }
+            }
+
+            if (this.InsertUpdate == "update")
+            {
+                string token = await _tokenService.GetTokenAsync();
+                Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
+                var res = await Http.GetAsync("api/GetClen/" + id);
+
+                if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    (customProvider as CustomAuthenticationProvider).Notify();
+                    navMgr.NavigateTo("/");
+                }
+                else if (res.IsSuccessStatusCode)
+                {
+                    clen = await res.Content.ReadFromJsonAsync<Clen>();
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+                    Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+                    Snackbar.Add("Се случи грешка при читање на член", Severity.Error);
+                }
+            }
+
+            await GetRabotniStatusi();
+            await GetStepeniObrazovanie();
+            await GetSlavi();
+            await GetNacionalnosti();
+            await GetOpstini();
+            StateHasChanged();
+        }
+
+        private async Task GetRabotniStatusi()
+        {
+            string token = await _tokenService.GetTokenAsync();
+            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
+            var res = await Http.GetAsync("api/GetRabotniStatusi");
+            if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                (customProvider as CustomAuthenticationProvider).Notify();
+                navMgr.NavigateTo("/");
+            }
+            else if (res.IsSuccessStatusCode)
+            {
+                rabStatusi = await res.Content.ReadFromJsonAsync<IEnumerable<RabotenStatus>>();
+            }
+            else
+            {
+                Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+                Snackbar.Add("Се случи грешка при читање на работните статуси", Severity.Error);
+            }
+        }
+
+        private async Task GetStepeniObrazovanie()
+        {
+            string token = await _tokenService.GetTokenAsync();
+            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
+            var res = await Http.GetAsync("api/GetStepeniObrazovanie");
+            if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                (customProvider as CustomAuthenticationProvider).Notify();
+                navMgr.NavigateTo("/");
+            }
+            else if (res.IsSuccessStatusCode)
+            {
+                stepeniObrazovanie = await res.Content.ReadFromJsonAsync<IEnumerable<StepenObrazovanie>>();
+            }
+            else
+            {
+                Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+                Snackbar.Add("Се случи грешка при читање на степени на образование", Severity.Error);
+            }
+        }
+
+        private async Task GetSlavi()
+        {
+            string token = await _tokenService.GetTokenAsync();
+            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
+            var res = await Http.GetAsync("api/GetSlavi");
+            if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                (customProvider as CustomAuthenticationProvider).Notify();
+                navMgr.NavigateTo("/");
+            }
+            else if (res.IsSuccessStatusCode)
+            {
+                slavi = await res.Content.ReadFromJsonAsync<IEnumerable<Slava>>();
+            }
+            else
+            {
+                Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+                Snackbar.Add("Се случи грешка при читање на славите", Severity.Error);
+            }
+        }
+
+        private async Task GetNacionalnosti()
+        {
+            string token = await _tokenService.GetTokenAsync();
+            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
+            var res = await Http.GetAsync("api/GetNacionalnosti");
+            if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                (customProvider as CustomAuthenticationProvider).Notify();
+                navMgr.NavigateTo("/");
+            }
+            else if (res.IsSuccessStatusCode)
+            {
+                nacionalnosti = await res.Content.ReadFromJsonAsync<IEnumerable<Nacionalnost>>();
+            }
+            else
+            {
+                Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+                Snackbar.Add("Се случи грешка при читање на националностите", Severity.Error);
+            }
+        }
+
+        private async Task GetOpstini()
+        {
+            string token = await _tokenService.GetTokenAsync();
+            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
+            var res = await Http.GetAsync("api/GetOpstini");
+            if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                (customProvider as CustomAuthenticationProvider).Notify();
+                navMgr.NavigateTo("/");
+            }
+            else if (res.IsSuccessStatusCode)
+            {
+                opstini = await res.Content.ReadFromJsonAsync<IEnumerable<string>>();
+            }
+            else
+            {
+                Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+                Snackbar.Add("Се случи грешка при читање на националностите", Severity.Error);
+            }
+        }
+
+        async Task ValidSubmit(EditContext editContext)
+        {
+            string token = await _tokenService.GetTokenAsync();
+            Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", token);
+            HttpResponseMessage res;
+            if (InsertUpdate == "insert")
+            {
+                res = await Http.PostAsJsonAsync("api/InsertClen", clen);
+            }
+            else
+            {
+                res = await Http.PostAsJsonAsync("api/UpdateClen", clen);
+            }
+            if (res.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                (customProvider as CustomAuthenticationProvider).Notify();
+                navMgr.NavigateTo("/");
+            }
+            else if (res.IsSuccessStatusCode)
+            {
+                Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+                if (InsertUpdate == "insert")
+                    Snackbar.Add("Успешно внесен член", Severity.Success);
+                else
+                    Snackbar.Add("Успешно ажуриран член", Severity.Success);
+                navMgr.NavigateTo("/clenovi", false);
+
+            }
+            else
+            {
+                Snackbar.Configuration.SnackbarVariant = Variant.Filled;
+                Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopRight;
+                Snackbar.Add("Се случи грешка при запишување на членот", Severity.Error);
+                navMgr.NavigateTo("/clenovi", false);
+            }
+        }
+
+        private async Task<IEnumerable<string>> SearchOpstini(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return opstini;
+            return opstini.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+        }
+
+        private void Cancel()
+        {
+            navMgr.NavigateTo("/clenovi", false);
+        }
+    }
